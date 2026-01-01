@@ -103,7 +103,7 @@
 <header>
   <h1>Netball Rotations</h1>
   <div class="sub">
-    <span>Season mode • permanent players • add games by round • round name/date • +score buttons • live quarter warnings • timer • end game lock</span>
+    <span>Season mode • permanent players • add games • scoring • timer • end game lock • re-open</span>
     <span id="saveState" class="muted"></span>
   </div>
 </header>
@@ -130,7 +130,6 @@
       <button class="ghost small danger" id="resetAllBtn" title="Reset everything (season)">Reset All</button>
     </div>
 
-    <!-- Rounds strip (tap to review any round) -->
     <div class="row" style="margin-top:10px;">
       <div class="muted">Rounds:</div>
       <div class="seg" id="roundSeg"></div>
@@ -203,6 +202,7 @@
       </div>
       <button class="ghost small" id="setLiveToEditingBtn">Set live = editing</button>
       <button class="primary small" id="qtrFinishedBtn">Qtr finished → Next</button>
+      <button class="ghost small danger" id="reopenBtn" style="display:none;">Re-open game</button>
     </div>
 
     <!-- TIMER -->
@@ -228,7 +228,6 @@
 
     <div style="height:12px"></div>
 
-    <!-- LIVE TOTAL SCORE ONLY -->
     <div class="row" style="align-items:flex-end; justify-content:space-between;">
       <div>
         <div class="scoreBig" id="homeScore">0</div>
@@ -241,7 +240,6 @@
       </div>
     </div>
 
-    <!-- FINAL banner -->
     <div class="finalBanner" id="finalBanner">
       <div class="small" id="finalBannerTop">FINAL</div>
       <div class="big" id="finalBannerText">Result</div>
@@ -264,7 +262,7 @@
 
     <div style="height:10px"></div>
     <div class="muted">
-      +GS/+GA credits the player currently assigned to GS/GA in the <b>LIVE quarter</b>. When game ends, scoring is locked.
+      +GS/+GA credits the player assigned to GS/GA in the <b>LIVE quarter</b>. When game ends, scoring is locked.
     </div>
 
     <div style="height:10px"></div>
@@ -393,7 +391,6 @@
 
       gameEnded: false,
 
-      // timer
       qtrMinutes: 10,
       timerRunning: false,
       timerRemaining: 10 * 60,
@@ -560,12 +557,7 @@
     btn.textContent = g.timerRunning ? "Pause" : "Start";
     minsSel.value = String(g.qtrMinutes);
 
-    // If game ended, keep timer paused visually
-    if(g.gameEnded){
-      btn.disabled = true;
-    } else {
-      btn.disabled = false;
-    }
+    btn.disabled = !!g.gameEnded;
   }
 
   function tickTimer(){
@@ -643,7 +635,6 @@
       return;
     }
 
-    // If already on Q4, end the game
     if(g.liveQ >= 3){
       g.gameEnded = true;
       g.timerRunning = false;
@@ -653,11 +644,20 @@
       return;
     }
 
-    // Otherwise move to next quarter
     resetTimer();
     g.liveQ += 1;
     g.selectedQ = g.liveQ;
 
+    saveState();
+    renderAll();
+  }
+
+  function reopenGame(){
+    const g = currentGame();
+    if(!g.gameEnded) return;
+
+    if(!confirm("Re-open this game? Scoring will be unlocked again.")) return;
+    g.gameEnded = false;
     saveState();
     renderAll();
   }
@@ -681,9 +681,19 @@
   function updateGameEndedUI(){
     const g = currentGame();
     const endBtn = document.getElementById("qtrFinishedBtn");
-    const ids = ["homePlus","homeMinus","awayPlus","awayMinus","undoBtn","gsPlus","gaPlus","setLiveToEditingBtn","timerResetBtn","qtrMinutes"];
+    const reopenBtn = document.getElementById("reopenBtn");
+
+    const lockIds = [
+      "homePlus","homeMinus","awayPlus","awayMinus","undoBtn","gsPlus","gaPlus",
+      "setLiveToEditingBtn","timerResetBtn","qtrMinutes","timerStartBtn"
+    ];
 
     const locked = !!g.gameEnded;
+
+    if(reopenBtn){
+      reopenBtn.style.display = locked ? "inline-block" : "none";
+      reopenBtn.disabled = !locked ? true : false;
+    }
 
     if(endBtn){
       if(locked){
@@ -698,7 +708,7 @@
       }
     }
 
-    ids.forEach(id=>{
+    lockIds.forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.disabled = locked ? true : false;
     });
@@ -721,11 +731,9 @@
     const home = totalHome(g);
     const away = totalAway(g);
     const team = state.teamName?.trim() ? state.teamName.trim() : "Home";
-    const opp  = g.opponent?.trim() ? g.opponent.trim() : "Away";
-
     const diff = home - away;
-    top.textContent = "FINAL";
 
+    top.textContent = "FINAL";
     banner.classList.remove("win","loss","draw");
     banner.style.display = "block";
 
@@ -836,7 +844,6 @@
     const g = currentGame();
     const q = g.selectedQ;
 
-    // prevent same player in two positions in same quarter
     if(pid){
       for(const p of POSITIONS){
         if(p !== pos && g.quarters[q].assignments[p] === pid){
@@ -1035,7 +1042,6 @@
     document.getElementById("homeLabel").textContent = team;
     document.getElementById("awayLabel").textContent = opp;
 
-    // Live total score only
     document.getElementById("homeScore").textContent = totalHome(g);
     document.getElementById("awayScore").textContent = totalAway(g);
 
@@ -1078,9 +1084,6 @@
 
       row.appendChild(tag);
       row.appendChild(sel);
-
-      // +1 buttons beside GS/GA removed (now next to Home +1)
-
       grid.appendChild(row);
     });
   }
@@ -1456,6 +1459,9 @@
   document.getElementById("gsPlus").addEventListener("click", ()=>scoreFromPosition("GS"));
   document.getElementById("gaPlus").addEventListener("click", ()=>scoreFromPosition("GA"));
 
+  document.getElementById("qtrFinishedBtn").addEventListener("click", finishQuarter);
+  document.getElementById("reopenBtn").addEventListener("click", reopenGame);
+
   document.getElementById("resetAllBtn").addEventListener("click", ()=>{
     if(confirm("Reset EVERYTHING (season players, all games, all scores)?")) resetAll();
   });
@@ -1478,8 +1484,6 @@
   document.getElementById("copyRotationsBtn").addEventListener("click", ()=>{
     copyText(buildRotationsText(currentGame()));
   });
-
-  document.getElementById("qtrFinishedBtn").addEventListener("click", finishQuarter);
 
   document.getElementById("qtrMinutes").addEventListener("change", e=>{
     const g = currentGame();
