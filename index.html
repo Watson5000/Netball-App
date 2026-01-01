@@ -80,6 +80,22 @@
       font-size:12px;
     }
     .modal .row{margin-top:10px}
+
+    /* FINAL banner */
+    .finalBanner{
+      display:none;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid #ddd;
+      background:#f3f3f3;
+      font-weight:950;
+      margin-top:10px;
+    }
+    .finalBanner.win{ background:#e8f5e9; border-color:#c8e6c9; }
+    .finalBanner.loss{ background:#ffebee; border-color:#ffcdd2; }
+    .finalBanner.draw{ background:#e3f2fd; border-color:#bbdefb; }
+    .finalBanner .small{ font-size:12px; font-weight:800; opacity:.8; }
+    .finalBanner .big{ font-size:18px; font-weight:950; margin-top:4px; }
   </style>
 </head>
 
@@ -87,7 +103,7 @@
 <header>
   <h1>Netball Rotations</h1>
   <div class="sub">
-    <span>Season mode • permanent players • add games by round • round name/date • +score buttons • live quarter warnings • timer</span>
+    <span>Season mode • permanent players • add games by round • round name/date • +score buttons • live quarter warnings • timer • end game lock</span>
     <span id="saveState" class="muted"></span>
   </div>
 </header>
@@ -225,6 +241,12 @@
       </div>
     </div>
 
+    <!-- FINAL banner -->
+    <div class="finalBanner" id="finalBanner">
+      <div class="small" id="finalBannerTop">FINAL</div>
+      <div class="big" id="finalBannerText">Result</div>
+    </div>
+
     <div style="height:10px"></div>
 
     <div class="row">
@@ -242,7 +264,7 @@
 
     <div style="height:10px"></div>
     <div class="muted">
-      +GS/+GA credits the player currently assigned to GS/GA in the <b>LIVE quarter</b>.
+      +GS/+GA credits the player currently assigned to GS/GA in the <b>LIVE quarter</b>. When game ends, scoring is locked.
     </div>
 
     <div style="height:10px"></div>
@@ -369,6 +391,8 @@
       selectedQ: 0,
       liveQ: 0,
 
+      gameEnded: false,
+
       // timer
       qtrMinutes: 10,
       timerRunning: false,
@@ -427,6 +451,7 @@
       if(g.gameDate == null) g.gameDate = "";
       if(g.selectedQ == null) g.selectedQ = 0;
       if(g.liveQ == null) g.liveQ = g.selectedQ || 0;
+      if(g.gameEnded == null) g.gameEnded = false;
 
       if(g.qtrMinutes == null) g.qtrMinutes = 10;
       if(g.timerRunning == null) g.timerRunning = false;
@@ -534,6 +559,13 @@
     display.textContent = fmtTime(g.timerRemaining);
     btn.textContent = g.timerRunning ? "Pause" : "Start";
     minsSel.value = String(g.qtrMinutes);
+
+    // If game ended, keep timer paused visually
+    if(g.gameEnded){
+      btn.disabled = true;
+    } else {
+      btn.disabled = false;
+    }
   }
 
   function tickTimer(){
@@ -575,6 +607,7 @@
 
   function toggleTimer(){
     const g = currentGame();
+    if(g.gameEnded) return alert("Game ended — timer locked.");
 
     if(g.timerRunning){
       g.timerRunning = false;
@@ -601,15 +634,26 @@
     renderTimer();
   }
 
-  /* ---------- QUARTER FINISHED ---------- */
+  /* ---------- END GAME / QUARTER FINISHED ---------- */
   function finishQuarter(){
     const g = currentGame();
 
-    if (g.liveQ >= 3) {
-      alert("You’re already on Q4 (last quarter).");
+    if(g.gameEnded){
+      alert("Game already ended.");
       return;
     }
 
+    // If already on Q4, end the game
+    if(g.liveQ >= 3){
+      g.gameEnded = true;
+      g.timerRunning = false;
+      stopTimerLoop();
+      saveState();
+      renderAll();
+      return;
+    }
+
+    // Otherwise move to next quarter
     resetTimer();
     g.liveQ += 1;
     g.selectedQ = g.liveQ;
@@ -633,6 +677,70 @@
     if(gaEl) gaEl.textContent = gaId ? playerName(gaId) : "—";
   }
 
+  /* ---------- GAME ENDED UI LOCKS ---------- */
+  function updateGameEndedUI(){
+    const g = currentGame();
+    const endBtn = document.getElementById("qtrFinishedBtn");
+    const ids = ["homePlus","homeMinus","awayPlus","awayMinus","undoBtn","gsPlus","gaPlus","setLiveToEditingBtn","timerResetBtn","qtrMinutes"];
+
+    const locked = !!g.gameEnded;
+
+    if(endBtn){
+      if(locked){
+        endBtn.textContent = "Game ended";
+        endBtn.disabled = true;
+      } else if(g.liveQ >= 3){
+        endBtn.textContent = "End game";
+        endBtn.disabled = false;
+      } else {
+        endBtn.textContent = "Qtr finished → Next";
+        endBtn.disabled = false;
+      }
+    }
+
+    ids.forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.disabled = locked ? true : false;
+    });
+  }
+
+  /* ---------- FINAL BANNER ---------- */
+  function updateFinalBanner(){
+    const g = currentGame();
+    const banner = document.getElementById("finalBanner");
+    const top = document.getElementById("finalBannerTop");
+    const text = document.getElementById("finalBannerText");
+    if(!banner || !top || !text) return;
+
+    if(!g.gameEnded){
+      banner.style.display = "none";
+      banner.classList.remove("win","loss","draw");
+      return;
+    }
+
+    const home = totalHome(g);
+    const away = totalAway(g);
+    const team = state.teamName?.trim() ? state.teamName.trim() : "Home";
+    const opp  = g.opponent?.trim() ? g.opponent.trim() : "Away";
+
+    const diff = home - away;
+    top.textContent = "FINAL";
+
+    banner.classList.remove("win","loss","draw");
+    banner.style.display = "block";
+
+    if(diff > 0){
+      banner.classList.add("win");
+      text.textContent = `${team} WON by ${diff} (${home}–${away})`;
+    } else if(diff < 0){
+      banner.classList.add("loss");
+      text.textContent = `${team} LOST by ${Math.abs(diff)} (${home}–${away})`;
+    } else {
+      banner.classList.add("draw");
+      text.textContent = `DRAW (${home}–${away})`;
+    }
+  }
+
   /* ---------- SCORING + EVENTS ---------- */
   function pushEvent(game, q, type, payload){
     game.quarters[q].events.push({ type, q, payload, t: Date.now() });
@@ -641,6 +749,8 @@
 
   function scoreTeam(which, delta){
     const g = currentGame();
+    if(g.gameEnded) return alert("Game ended — scoring locked.");
+
     const q = g.liveQ;
 
     if(which==="home"){
@@ -655,12 +765,15 @@
     renderGoalLog();
     renderRoundSeg();
     renderAllQuarterWarn();
+    updateFinalBanner();
   }
 
   function scoreFromPosition(pos){
     if(pos!=="GS" && pos!=="GA") return;
 
     const g = currentGame();
+    if(g.gameEnded) return alert("Game ended — scoring locked.");
+
     const q = g.liveQ;
 
     const pid = g.quarters[q].assignments[pos];
@@ -679,10 +792,13 @@
     renderQuarterTable();
     renderRoundSeg();
     renderAllQuarterWarn();
+    updateFinalBanner();
   }
 
   function undo(){
     const g = currentGame();
+    if(g.gameEnded) return alert("Game ended — undo locked.");
+
     const q = g.liveQ;
 
     const events = g.quarters[q].events;
@@ -712,6 +828,7 @@
     renderQuarterTable();
     renderRoundSeg();
     renderAllQuarterWarn();
+    updateFinalBanner();
   }
 
   /* ---------- ASSIGNMENTS (EDITING QUARTER) ---------- */
@@ -719,6 +836,7 @@
     const g = currentGame();
     const q = g.selectedQ;
 
+    // prevent same player in two positions in same quarter
     if(pid){
       for(const p of POSITIONS){
         if(p !== pos && g.quarters[q].assignments[p] === pid){
@@ -891,6 +1009,7 @@
     document.getElementById("liveQuarterLabel").textContent = `Q${g.liveQ + 1}`;
 
     document.getElementById("setLiveToEditingBtn").onclick = () => {
+      if(g.gameEnded) return;
       g.liveQ = g.selectedQ;
       saveState();
       renderScores();
@@ -898,6 +1017,7 @@
       renderQuarterTable();
       renderAllQuarterWarn();
       updateScorerButtons();
+      updateGameEndedUI();
     };
 
     const qc = document.getElementById("quarterCard");
@@ -959,7 +1079,7 @@
       row.appendChild(tag);
       row.appendChild(sel);
 
-      // NOTE: +1 buttons beside GS/GA removed (now next to Home +1)
+      // +1 buttons beside GS/GA removed (now next to Home +1)
 
       grid.appendChild(row);
     });
@@ -1282,6 +1402,8 @@
     renderTimer();
     renderAllQuarterWarn();
     updateScorerButtons();
+    updateGameEndedUI();
+    updateFinalBanner();
     saveState();
   }
 
@@ -1292,6 +1414,7 @@
     renderScores();
     renderQuarterTable();
     renderRoundSeg();
+    updateFinalBanner();
   });
 
   document.getElementById("opponent").addEventListener("input", e=>{
@@ -1301,6 +1424,7 @@
     renderScores();
     renderQuarterTable();
     renderRoundSeg();
+    updateFinalBanner();
   });
 
   document.getElementById("roundName").addEventListener("input", e=>{
@@ -1359,6 +1483,8 @@
 
   document.getElementById("qtrMinutes").addEventListener("change", e=>{
     const g = currentGame();
+    if(g.gameEnded) return;
+
     g.qtrMinutes = Number(e.target.value);
     if (!g.timerRunning) {
       g.timerRemaining = g.qtrMinutes * 60;
@@ -1368,7 +1494,7 @@
     renderTimer();
   });
   document.getElementById("timerStartBtn").addEventListener("click", toggleTimer);
-  document.getElementById("timerResetBtn").addEventListener("click", resetTimer);
+  document.getElementById("timerResetBtn").addEventListener("click", ()=>{ if(!currentGame().gameEnded) resetTimer(); });
 
   /* Sync wiring */
   document.getElementById("syncBtn").addEventListener("click", openSync);
