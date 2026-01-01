@@ -36,6 +36,7 @@
     .posRow { display:flex; gap:10px; align-items:center; }
     .posTag { width:54px; min-width:54px; text-align:center; padding:8px 0; border-radius:10px; background:#f0f0f0; border: var(--b); font-weight:900; }
     .score { font-size:24px; font-weight:950; letter-spacing:.5px; }
+    .scoreBig { font-size:40px; font-weight:950; line-height:1; }
     .muted { color:#666; font-size:13px; }
     .list { display:grid; gap:8px; }
     .pill { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border: var(--b); border-radius: 12px; background:#fff; }
@@ -57,6 +58,28 @@
     .q4 .quarterTint { color:#8e24aa; }
 
     .warn { padding:10px 12px; border-radius:12px; border:1px solid #ffe082; background:#fff8e1; }
+
+    /* Sync modal */
+    .modalBack{
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.45);
+      display:none; align-items:center; justify-content:center;
+      padding:16px; z-index:9999;
+    }
+    .modal{
+      width:min(760px, 100%);
+      background:#fff;
+      border:1px solid #ddd;
+      border-radius:16px;
+      padding:14px;
+    }
+    .modal h3{margin:0 0 6px 0}
+    .modal textarea{
+      min-height:160px;
+      font-family:ui-monospace, Menlo, monospace;
+      font-size:12px;
+    }
+    .modal .row{margin-top:10px}
   </style>
 </head>
 
@@ -125,6 +148,7 @@
           <button class="ghost small" id="newGameBtn" title="Reset this game (keep players)">Reset This Game</button>
           <button class="ghost small" id="copySummaryBtn">Copy Game Summary</button>
           <button class="ghost small" id="copySeasonBtn">Copy Season Summary</button>
+          <button class="primary small" id="syncBtn">Sync</button>
         </div>
       </div>
     </div>
@@ -189,14 +213,14 @@
     <div style="height:12px"></div>
 
     <!-- LIVE TOTAL SCORE ONLY -->
-    <div class="row" style="align-items:flex-end; justify-content:space-between; margin-top:8px;">
+    <div class="row" style="align-items:flex-end; justify-content:space-between;">
       <div>
-        <div class="score" style="font-size:40px;font-weight:950;line-height:1;" id="homeScore">0</div>
+        <div class="scoreBig" id="homeScore">0</div>
         <div class="muted" id="homeLabel">Home</div>
       </div>
 
       <div class="right">
-        <div class="score" style="font-size:40px;font-weight:950;line-height:1;" id="awayScore">0</div>
+        <div class="scoreBig" id="awayScore">0</div>
         <div class="muted" id="awayLabel">Away</div>
       </div>
     </div>
@@ -205,10 +229,8 @@
 
     <div class="row">
       <button class="primary" id="homePlus">Home +1</button>
-
       <button class="primary" id="gsPlus">+GS (<span id="gsName">—</span>)</button>
       <button class="primary" id="gaPlus">+GA (<span id="gaName">—</span>)</button>
-
       <button class="ghost" id="homeMinus">Home −1</button>
 
       <div class="grow"></div>
@@ -297,6 +319,31 @@
     <div style="height:10px"></div>
     <textarea id="notes" placeholder="e.g. Injuries, umpire notes, rotation ideas…"></textarea>
   </section>
+
+  <!-- SYNC MODAL -->
+  <div class="modalBack" id="syncBack">
+    <div class="modal">
+      <div class="row">
+        <h3 class="grow">Sync (Export / Import)</h3>
+        <button class="ghost small" id="syncClose">Close</button>
+      </div>
+
+      <div class="muted">
+        Export on one device, then import on the other. <b>Import replaces</b> the season on this device.
+      </div>
+
+      <div style="height:10px"></div>
+
+      <textarea id="syncText" placeholder="Export will appear here. For import: paste the exported text here…"></textarea>
+
+      <div class="row">
+        <button class="primary small" id="syncExport">Export (Copy)</button>
+        <button class="ghost small" id="syncImport">Import (Paste & Replace)</button>
+        <div class="grow"></div>
+        <button class="ghost small danger" id="syncClear">Clear</button>
+      </div>
+    </div>
+  </div>
 </main>
 
 <script>
@@ -351,6 +398,13 @@
     };
   }
 
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
   let state = loadState() || defaultState();
   ensureIntegrity();
 
@@ -393,13 +447,6 @@
     const el = document.getElementById("saveState");
     el.textContent = "Saved ✓";
     setTimeout(()=> el.textContent = "", 800);
-  }
-
-  function loadState(){
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
   }
 
   function resetAll(){
@@ -862,14 +909,13 @@
 
   function renderScores(){
     const g = currentGame();
-
     const team = state.teamName?.trim() ? state.teamName.trim() : "Home";
     const opp  = g.opponent?.trim() ? g.opponent.trim() : "Away";
 
     document.getElementById("homeLabel").textContent = team;
     document.getElementById("awayLabel").textContent = opp;
 
-    // LIVE TOTAL SCORE ONLY
+    // Live total score only
     document.getElementById("homeScore").textContent = totalHome(g);
     document.getElementById("awayScore").textContent = totalAway(g);
 
@@ -913,7 +959,7 @@
       row.appendChild(tag);
       row.appendChild(sel);
 
-      // removed +1 buttons beside GS/GA (now next to Home +1)
+      // NOTE: +1 buttons beside GS/GA removed (now next to Home +1)
 
       grid.appendChild(row);
     });
@@ -1164,6 +1210,59 @@
     return lines.join("\n");
   }
 
+  /* ---------- SYNC (EXPORT / IMPORT) ---------- */
+  function openSync(){ document.getElementById("syncBack").style.display = "flex"; }
+  function closeSync(){ document.getElementById("syncBack").style.display = "none"; }
+
+  async function copyToClipboard(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      alert("Copied to clipboard.");
+    }catch{
+      const t = document.getElementById("syncText");
+      t.value = text;
+      t.focus();
+      t.select();
+      alert("Clipboard blocked. Text selected—tap Copy.");
+    }
+  }
+
+  function exportSeason(){
+    const payload = { app:"NetballRotations", version:1, exportedAt:new Date().toISOString(), state };
+    const text = JSON.stringify(payload);
+    document.getElementById("syncText").value = text;
+    copyToClipboard(text);
+  }
+
+  function importSeason(){
+    const t = document.getElementById("syncText").value.trim();
+    if(!t) return alert("Paste the exported text first.");
+
+    let obj;
+    try{ obj = JSON.parse(t); }
+    catch{ return alert("That doesn’t look like valid exported data."); }
+
+    const incomingState = (obj && obj.state) ? obj.state : obj;
+    if(!incomingState || !incomingState.games || !incomingState.players){
+      return alert("Import failed: data missing games/players.");
+    }
+
+    if(!confirm("Import will REPLACE the season on this device. Continue?")) return;
+
+    stopTimerLoop();
+    state = incomingState;
+
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }catch{
+      return alert("Import failed: could not save on this device (storage full?).");
+    }
+
+    ensureIntegrity();
+    renderAll();
+    alert("Import complete.");
+  }
+
   /* ---------- MAIN RENDER ---------- */
   function renderAll(){
     ensureIntegrity();
@@ -1261,7 +1360,6 @@
   document.getElementById("qtrMinutes").addEventListener("change", e=>{
     const g = currentGame();
     g.qtrMinutes = Number(e.target.value);
-
     if (!g.timerRunning) {
       g.timerRemaining = g.qtrMinutes * 60;
       g.timerLastTick = 0;
@@ -1272,6 +1370,15 @@
   document.getElementById("timerStartBtn").addEventListener("click", toggleTimer);
   document.getElementById("timerResetBtn").addEventListener("click", resetTimer);
 
+  /* Sync wiring */
+  document.getElementById("syncBtn").addEventListener("click", openSync);
+  document.getElementById("syncClose").addEventListener("click", closeSync);
+  document.getElementById("syncBack").addEventListener("click", (e)=>{ if(e.target.id === "syncBack") closeSync(); });
+  document.getElementById("syncExport").addEventListener("click", exportSeason);
+  document.getElementById("syncImport").addEventListener("click", importSeason);
+  document.getElementById("syncClear").addEventListener("click", ()=>{ document.getElementById("syncText").value=""; });
+
+  /* ---------- PWA OFFLINE ---------- */
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').catch(()=>{});
