@@ -16,7 +16,7 @@
     .card { background:#fff; border: var(--b); border-radius: var(--r); padding: var(--pad); }
     .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
     .grow { flex:1; }
-    .seg { display:flex; gap:8px; }
+    .seg { display:flex; gap:8px; flex-wrap:wrap; }
     .seg button { border: var(--b); background:#fff; padding:10px 12px; border-radius: 999px; font-weight:700; }
     .seg button.active{
       background:#111;
@@ -28,6 +28,7 @@
     button.primary { background:#111; color:#fff; border:1px solid #111; border-radius: 12px; padding:12px 14px; font-weight:800; }
     button.ghost { background:#fff; border: var(--b); border-radius: 12px; padding:12px 14px; font-weight:800; }
     button.small { padding:8px 10px; border-radius:10px; font-weight:800; }
+    button.danger { border-color:#c62828; color:#c62828; }
     select, input[type="text"] { border: var(--b); border-radius: 12px; padding:10px 12px; font-size:16px; background:#fff; }
     textarea { width:100%; min-height:70px; border: var(--b); border-radius: 12px; padding:10px 12px; font-size:16px; background:#fff; }
     .grid7 { display:grid; grid-template-columns: 1fr; gap:10px; }
@@ -46,7 +47,7 @@
     th { background:#fafafa; }
     details summary { cursor:pointer; font-weight:900; }
 
-    /* Quarter colour themes */
+    /* Quarter colour themes (editing quarter) */
     .q1 { border-left: 8px solid #1e88e5; }
     .q2 { border-left: 8px solid #43a047; }
     .q3 { border-left: 8px solid #fb8c00; }
@@ -56,38 +57,66 @@
     .q2 .quarterTint { color:#43a047; }
     .q3 .quarterTint { color:#fb8c00; }
     .q4 .quarterTint { color:#8e24aa; }
+
+    .warn { padding:10px 12px; border-radius:12px; border:1px solid #ffe082; background:#fff8e1; }
   </style>
 </head>
 <body>
 <header>
   <h1>Netball Rotations</h1>
   <div class="sub">
-    <span>10 players • 4 quarters • GS/GA credit goals • Live quarter warnings</span>
+    <span>Season mode • permanent players • add games by round • GS/GA credit goals • live quarter warnings</span>
     <span id="saveState" class="muted"></span>
   </div>
 </header>
 
 <main>
-  <!-- SETUP -->
-  <section class="card" id="setupCard">
+  <!-- SEASON / GAME HEADER -->
+  <section class="card" id="seasonCard">
     <div class="row">
       <div class="grow">
-        <div class="muted">Your Team</div>
+        <div class="muted">Your Team (season)</div>
         <input id="teamName" type="text" placeholder="e.g. Tigers" />
       </div>
+
       <div class="grow">
-        <div class="muted">Opponent</div>
-        <input id="opponent" type="text" placeholder="e.g. Raptors" />
+        <div class="muted">Current Game</div>
+        <div style="font-weight:950; font-size:18px;">
+          <span id="roundLabel">Round 1</span> <span class="muted" id="roundCountLabel"></span>
+        </div>
       </div>
-      <button class="ghost small" id="newGameBtn" title="Reset scores/positions (keep player names)">New Game</button>
-      <button class="ghost small" id="resetAllBtn" title="Reset everything">Reset All</button>
+
+      <button class="ghost small" id="prevGameBtn">◀ Prev</button>
+      <button class="ghost small" id="nextGameBtn">Next ▶</button>
+      <button class="primary small" id="addGameBtn">+ Add Game</button>
+      <button class="ghost small danger" id="resetAllBtn" title="Reset everything (season)">Reset All</button>
     </div>
 
     <div style="height:10px"></div>
+
     <div class="row">
       <div class="grow">
-        <div style="font-weight:950;margin-bottom:6px;">Players (10)</div>
-        <div class="muted">Edit names. Goal totals + quarters-on-court update automatically.</div>
+        <div class="muted">Opponent (this game)</div>
+        <input id="opponent" type="text" placeholder="e.g. Raptors" />
+      </div>
+
+      <div class="grow">
+        <div class="muted">Quick actions (this game)</div>
+        <div class="row">
+          <button class="ghost small" id="newGameBtn" title="Reset this game (keep players)">Reset This Game</button>
+          <button class="ghost small" id="copySummaryBtn">Copy Game Summary</button>
+          <button class="ghost small" id="copySeasonBtn">Copy Season Summary</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETUP: PLAYERS -->
+  <section class="card" id="setupCard">
+    <div class="row">
+      <div class="grow">
+        <div style="font-weight:950;margin-bottom:6px;">Players (permanent for season)</div>
+        <div class="muted">Edit names once. Stats update per game + across season.</div>
       </div>
     </div>
 
@@ -132,14 +161,12 @@
       <div>
         <div class="muted" id="homeLabel">Home</div>
         <div class="score" id="homeScore">0</div>
-        <div class="muted">Total: <span id="homeTotal">0</span></div>
         <div class="muted">This quarter: <span id="homeQLabel">0</span></div>
       </div>
 
       <div class="right">
         <div class="muted" id="awayLabel">Away</div>
         <div class="score" id="awayScore">0</div>
-        <div class="muted">Total: <span id="awayTotal">0</span></div>
         <div class="muted">This quarter: <span id="awayQLabel">0</span></div>
       </div>
     </div>
@@ -157,15 +184,18 @@
 
     <div style="height:10px"></div>
     <div class="muted">
-      Player goal credit: assign who is in <b>GS</b>/<b>GA</b> (editing quarter), then use the <span class="kbd">+1</span> beside GS/GA.
+      Player goal credit: assign who is in <b>GS</b>/<b>GA</b> (live quarter), then use the <span class="kbd">+1</span> beside GS/GA.
     </div>
+
+    <div style="height:10px"></div>
+    <div class="warn muted" id="liveWarnBox" style="display:none;"></div>
   </section>
 
   <!-- POSITIONS -->
   <section class="card">
     <div class="row">
       <div class="grow" style="font-weight:950;">Positions (On Court)</div>
-      <div class="muted">Bench auto-updates</div>
+      <div class="muted">Bench auto-updates (editing quarter)</div>
     </div>
 
     <div style="height:10px"></div>
@@ -175,6 +205,7 @@
       <select id="copyTargetQuarter" style="max-width:140px;"></select>
       <button class="ghost small" id="copyPositionsBtn">Copy</button>
       <button class="ghost small" id="copyToNextBtn">Copy to next</button>
+      <button class="ghost small" id="copyToAllBtn" title="Overwrite Q2–Q4 with Q1 positions">Copy to all (from Q1)</button>
     </div>
 
     <div class="grid7" id="positionsGrid"></div>
@@ -188,11 +219,11 @@
     <div class="list" id="benchList"></div>
   </section>
 
-  <!-- GOAL TOTALS + COURT TIME -->
+  <!-- STATS: GAME + SEASON -->
   <section class="card">
     <div class="row">
       <div class="grow" style="font-weight:950;">Stats</div>
-      <button class="ghost small" id="copySummaryBtn">Copy Game Summary</button>
+      <div class="muted">Shows this game + season totals</div>
     </div>
     <div style="height:12px"></div>
     <div class="list" id="statsList"></div>
@@ -208,7 +239,7 @@
   <!-- QUARTER SUMMARY -->
   <section class="card">
     <div class="row">
-      <div class="grow" style="font-weight:950;">Quarter Summary</div>
+      <div class="grow" style="font-weight:950;">Quarter Summary (this game)</div>
       <button class="ghost small" id="copyRotationsBtn">Copy Rotations (Q1–Q4)</button>
     </div>
     <div style="height:10px"></div>
@@ -225,7 +256,7 @@
   <!-- NOTES -->
   <section class="card">
     <div class="row">
-      <div class="grow" style="font-weight:950;">Notes</div>
+      <div class="grow" style="font-weight:950;">Notes (this game)</div>
       <div class="muted">Saved automatically</div>
     </div>
     <div style="height:10px"></div>
@@ -234,613 +265,824 @@
 </main>
 
 <script>
-const POSITIONS = ["GS","GA","WA","C","WD","GD","GK"];
-const STORAGE_KEY = "netball_pwa_full_v2_liveq_copy";
+  const POSITIONS = ["GS","GA","WA","C","WD","GD","GK"];
+  const STORAGE_KEY = "netball_season_v1_addgame";
 
-function defaultState(){
-  return {
-    teamName: "",
-    opponent: "",
-    notes: "",
-    selectedQ: 0,      // editing quarter
-    liveQ: 0,          // scoring quarter
-    players: Array.from({length:10}, (_,i)=>({
+  function newEmptyGame(roundNumber){
+    return {
+      round: roundNumber,      // 1-based
+      opponent: "",
+      notes: "",
+      selectedQ: 0,            // editing quarter
+      liveQ: 0,                // scoring quarter
+      quarters: Array.from({length:4}, ()=>({
+        assignments: {},       // position -> playerId
+        homeScore: 0,
+        awayScore: 0,
+        events: []             // {type, q, payload, t}
+      })),
+      // per-game player stats keyed by playerId
+      playerStats: {}          // { [pid]: { goalsTotal:0, goalsByQ:[0,0,0,0] } }
+    };
+  }
+
+  function defaultState(){
+    const players = Array.from({length:10}, (_,i)=>({
       id: crypto.randomUUID(),
-      name: `Player ${i+1}`,
-      goalsTotal: 0,
-      goalsByQ: [0,0,0,0]
-    })),
-    quarters: Array.from({length:4}, ()=>({
-      assignments: {},   // position -> playerId
-      homeScore: 0,
-      awayScore: 0,
-      events: []         // {type, q, payload, t}
-    }))
-  };
-}
-
-let state = loadState() || defaultState();
-// Backward-compat if older saved version
-if (state.liveQ === undefined) state.liveQ = state.selectedQ || 0;
-
-function saveState(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  const el = document.getElementById("saveState");
-  el.textContent = "Saved ✓";
-  setTimeout(()=> el.textContent = "", 800);
-}
-
-function loadState(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch { return null; }
-}
-
-function resetAll(){
-  state = defaultState();
-  saveState();
-  renderAll();
-}
-
-// New game: keep names/team/opponent, clear scores/assignments/goals/logs/notes
-function newGameKeepNames(){
-  const keepPlayers = state.players.map(p=>({ id: crypto.randomUUID(), name: p.name, goalsTotal:0, goalsByQ:[0,0,0,0] }));
-  state.players = keepPlayers;
-  state.notes = "";
-  state.selectedQ = 0;
-  state.liveQ = 0;
-  state.quarters = Array.from({length:4}, ()=>({ assignments:{}, homeScore:0, awayScore:0, events:[] }));
-  saveState();
-  renderAll();
-}
-
-/* Helpers */
-function playerById(id){ return state.players.find(p=>p.id===id); }
-function playerName(id){ const p=playerById(id); return p? p.name : "—"; }
-function clamp0(n){ return Math.max(0, n); }
-
-function assignedIdsForQ(q){
-  const a = state.quarters[q].assignments;
-  return new Set(Object.values(a).filter(Boolean));
-}
-function benchPlayersForQ(q){
-  const assigned = assignedIdsForQ(q);
-  return state.players.filter(p=>!assigned.has(p.id));
-}
-function totalHome(){ return state.quarters.reduce((s,q)=>s+q.homeScore,0); }
-function totalAway(){ return state.quarters.reduce((s,q)=>s+q.awayScore,0); }
-
-// Court-time: number of quarters where player appears in any of the 7 positions
-function quartersOnCourt(playerId){
-  let count = 0;
-  for(let q=0;q<4;q++){
-    const assigned = assignedIdsForQ(q);
-    if(assigned.has(playerId)) count++;
+      name: `Player ${i+1}`
+    }));
+    const season = {
+      teamName: "",
+      players,
+      games: [newEmptyGame(1)],
+      currentGameIndex: 0
+    };
+    // init playerStats for game 1
+    season.games[0].playerStats = initPlayerStats(season.players);
+    return season;
   }
-  return count;
-}
 
-/* Live quarter warning gate */
-function resolveScoringQuarter(actionLabel){
-  let q = state.liveQ;
-
-  if (state.selectedQ !== state.liveQ) {
-    const ok = confirm(
-      `You're editing Q${state.selectedQ+1} but LIVE quarter is Q${state.liveQ+1}.\n\n` +
-      `${actionLabel} to LIVE quarter (Q${state.liveQ+1})?\n\n` +
-      `Press OK = keep LIVE\nPress Cancel = switch LIVE to editing (Q${state.selectedQ+1})`
-    );
-    if (!ok) {
-      state.liveQ = state.selectedQ;
-      q = state.liveQ;
-      saveState();
-      // keep UI in sync
-      const lq = document.getElementById("liveQuarterLabel");
-      if (lq) lq.textContent = `Q${state.liveQ + 1}`;
+  function initPlayerStats(players){
+    const stats = {};
+    for(const p of players){
+      stats[p.id] = { goalsTotal: 0, goalsByQ: [0,0,0,0] };
     }
-  }
-  return q;
-}
-
-/* Events + scoring */
-function pushEvent(type, q, payload){
-  state.quarters[q].events.push({ type, q, payload, t: Date.now() });
-  saveState();
-}
-
-function scoreTeam(which, delta){
-  const q = resolveScoringQuarter("Add score");
-  if(which==="home"){
-    state.quarters[q].homeScore = clamp0(state.quarters[q].homeScore + delta);
-  } else {
-    state.quarters[q].awayScore = clamp0(state.quarters[q].awayScore + delta);
-  }
-  pushEvent("score", q, { which, delta });
-  renderScores();
-  renderQuarterTable();
-  renderGoalLog();
-}
-
-function scoreFromPosition(pos){
-  if(pos!=="GS" && pos!=="GA") return;
-
-  const q = resolveScoringQuarter("Credit goal");
-
-  // scorer comes from LIVE quarter assignments (not editing quarter),
-  // because the scoring is being applied to the live quarter.
-  const pid = state.quarters[q].assignments[pos];
-  if(!pid) return alert(`Assign a player to ${pos} in LIVE quarter (Q${q+1}) first.`);
-
-  state.quarters[q].homeScore += 1;
-
-  const p = playerById(pid);
-  if(p){
-    p.goalsTotal += 1;
-    p.goalsByQ[q] += 1;
+    return stats;
   }
 
-  pushEvent("playerGoal", q, { pid, pos });
-  renderScores();
-  renderStats();
-  renderGoalLog();
-  renderQuarterTable();
-}
+  let state = loadState() || defaultState();
+  ensureIntegrity();
 
-function undo(){
-  const q = resolveScoringQuarter("Undo last event");
-  const events = state.quarters[q].events;
-  const last = events.pop();
-  if(!last) return;
-
-  if(last.type==="score"){
-    const {which, delta} = last.payload;
-    if(which==="home") state.quarters[q].homeScore = clamp0(state.quarters[q].homeScore - delta);
-    else state.quarters[q].awayScore = clamp0(state.quarters[q].awayScore - delta);
-  }
-
-  if(last.type==="playerGoal"){
-    const {pid} = last.payload;
-    state.quarters[q].homeScore = clamp0(state.quarters[q].homeScore - 1);
-    const p = playerById(pid);
-    if(p){
-      p.goalsTotal = clamp0(p.goalsTotal - 1);
-      p.goalsByQ[q] = clamp0(p.goalsByQ[q] - 1);
+  function ensureIntegrity(){
+    if(!state.games || state.games.length === 0){
+      state.games = [newEmptyGame(1)];
+      state.currentGameIndex = 0;
     }
-  }
+    if(state.currentGameIndex == null) state.currentGameIndex = 0;
+    if(state.currentGameIndex < 0) state.currentGameIndex = 0;
+    if(state.currentGameIndex >= state.games.length) state.currentGameIndex = state.games.length - 1;
 
-  saveState();
-  renderScores();
-  renderStats();
-  renderGoalLog();
-  renderQuarterTable();
-}
-
-/* Assignments (editing quarter) */
-function setAssignment(pos, pid){
-  const q = state.selectedQ;
-
-  // Prevent same player in two positions in same quarter
-  if(pid){
-    for(const p of POSITIONS){
-      if(p !== pos && state.quarters[q].assignments[p] === pid){
-        state.quarters[q].assignments[p] = null;
+    // ensure all games have playerStats for current player list
+    for(const g of state.games){
+      if(!g.playerStats) g.playerStats = {};
+      for(const p of state.players){
+        if(!g.playerStats[p.id]){
+          g.playerStats[p.id] = { goalsTotal:0, goalsByQ:[0,0,0,0] };
+        }
       }
     }
   }
 
-  state.quarters[q].assignments[pos] = pid || null;
-  pushEvent("assign", q, { pos, pid: pid || null });
-  renderPositions();
-  renderBench();
-  renderStats();
-  renderQuarterPositionsAll();
-}
-
-/* Copy positions */
-function populateCopyTargets(){
-  const sel = document.getElementById("copyTargetQuarter");
-  if (!sel) return;
-
-  sel.innerHTML = "";
-  for (let i = 0; i < 4; i++) {
-    if (i === state.selectedQ) continue;
-    const opt = document.createElement("option");
-    opt.value = i;
-    opt.textContent = `Q${i+1}`;
-    sel.appendChild(opt);
-  }
-}
-
-function copyAssignments(fromQ, toQ){
-  state.quarters[toQ].assignments = JSON.parse(JSON.stringify(state.quarters[fromQ].assignments || {}));
-  saveState();
-}
-
-/* Render */
-function escapeHtml(str){
-  return (str || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
-
-function renderPlayersInputs(){
-  const wrap = document.getElementById("playersInputs");
-  wrap.innerHTML = "";
-  wrap.style.gridTemplateColumns = (window.innerWidth >= 780) ? "1fr 1fr" : "1fr";
-
-  state.players.forEach((p, idx)=>{
-    const div = document.createElement("div");
-    div.className = "row";
-    div.innerHTML = `
-      <div class="grow">
-        <div class="muted">Player ${idx+1}</div>
-        <input type="text" value="${escapeHtml(p.name)}" data-pid="${p.id}" />
-      </div>
-    `;
-    const input = div.querySelector("input");
-    input.addEventListener("input", (e)=>{
-      p.name = e.target.value;
-      saveState();
-      renderPositions();
-      renderStats();
-      renderQuarterPositionsAll();
-      renderScores();
-      renderQuarterTable();
-    });
-    wrap.appendChild(div);
-  });
-
-  document.getElementById("teamName").value = state.teamName || "";
-  document.getElementById("opponent").value = state.opponent || "";
-  document.getElementById("notes").value = state.notes || "";
-}
-
-function renderQuarterSeg(){
-  const seg = document.getElementById("quarterSeg");
-  seg.innerHTML = "";
-  for(let i=0;i<4;i++){
-    const b = document.createElement("button");
-    b.textContent = `Q${i+1}`;
-    b.className = (state.selectedQ===i) ? "active" : "";
-    b.addEventListener("click", ()=>{
-      state.selectedQ = i;
-      saveState();
-      renderAll();
-    });
-    seg.appendChild(b);
+  function saveState(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const el = document.getElementById("saveState");
+    el.textContent = "Saved ✓";
+    setTimeout(()=> el.textContent = "", 800);
   }
 
-  document.getElementById("editingQuarter").textContent = `Q${state.selectedQ + 1}`;
-  document.getElementById("liveQuarterLabel").textContent = `Q${state.liveQ + 1}`;
-  document.getElementById("setLiveToEditingBtn").onclick = () => {
-    state.liveQ = state.selectedQ;
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
+  function resetAll(){
+    state = defaultState();
     saveState();
-    document.getElementById("liveQuarterLabel").textContent = `Q${state.liveQ + 1}`;
-    renderScores();
-    renderGoalLog();
-    renderQuarterTable();
-  };
+    renderAll();
+  }
 
-  // Apply quarter colour theme to the Quarter card (editing quarter)
-  const qc = document.getElementById("quarterCard");
-  qc.classList.remove("q1","q2","q3","q4");
-  qc.classList.add(`q${state.selectedQ + 1}`);
-}
+  function currentGame(){
+    return state.games[state.currentGameIndex];
+  }
 
-function renderScores(){
-  const editQ = state.selectedQ;
-  const liveQ = state.liveQ;
+  function gameLabel(){
+    return `Round ${currentGame().round}`;
+  }
 
-  // Per-quarter display shows EDITING quarter (so you see what you're planning)
-  document.getElementById("homeScore").textContent = state.quarters[editQ].homeScore;
-  document.getElementById("awayScore").textContent = state.quarters[editQ].awayScore;
-  document.getElementById("homeQLabel").textContent = state.quarters[editQ].homeScore;
-  document.getElementById("awayQLabel").textContent = state.quarters[editQ].awayScore;
+  /* Helpers */
+  function escapeHtml(str){
+    return (str || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
 
-  // Totals
-  document.getElementById("homeTotal").textContent = totalHome();
-  document.getElementById("awayTotal").textContent = totalAway();
+  function playerById(id){ return state.players.find(p=>p.id===id); }
+  function playerName(id){ const p=playerById(id); return p? p.name : "—"; }
+  function clamp0(n){ return Math.max(0, n); }
 
-  const team = state.teamName?.trim() ? state.teamName.trim() : "Home";
-  const opp  = state.opponent?.trim() ? state.opponent.trim() : "Away";
+  function assignedIdsForQ(game, q){
+    const a = game.quarters[q].assignments;
+    return new Set(Object.values(a).filter(Boolean));
+  }
 
-  document.getElementById("homeLabel").textContent = team;
-  document.getElementById("awayLabel").textContent = opp;
+  function benchPlayersForQ(game, q){
+    const assigned = assignedIdsForQ(game, q);
+    return state.players.filter(p=>!assigned.has(p.id));
+  }
 
-  // Big overall score line
-  document.getElementById("overallScoreLine").textContent = `${totalHome()} – ${totalAway()}`;
-  document.getElementById("overallLabelLine").textContent = `${team} vs ${opp}`;
+  function totalHome(game){ return game.quarters.reduce((s,q)=>s+q.homeScore,0); }
+  function totalAway(game){ return game.quarters.reduce((s,q)=>s+q.awayScore,0); }
 
-  // Keep live quarter label accurate
-  document.getElementById("liveQuarterLabel").textContent = `Q${liveQ + 1}`;
-}
+  function quartersOnCourt(game, playerId){
+    let count = 0;
+    for(let q=0;q<4;q++){
+      const assigned = assignedIdsForQ(game, q);
+      if(assigned.has(playerId)) count++;
+    }
+    return count;
+  }
 
-function renderPositions(){
-  const grid = document.getElementById("positionsGrid");
-  grid.innerHTML = "";
-  const q = state.selectedQ; // EDITING quarter
+  function seasonGoalsForPlayer(playerId){
+    return state.games.reduce((sum,g)=> sum + (g.playerStats[playerId]?.goalsTotal || 0), 0);
+  }
+  function seasonCourtForPlayer(playerId){
+    return state.games.reduce((sum,g)=> sum + quartersOnCourt(g, playerId), 0);
+  }
 
-  POSITIONS.forEach(pos=>{
-    const row = document.createElement("div");
-    row.className = "posRow";
+  /* Live quarter warning gate */
+  function resolveScoringQuarter(actionLabel){
+    const g = currentGame();
+    let q = g.liveQ;
 
-    const tag = document.createElement("div");
-    tag.className = "posTag";
-    tag.textContent = pos;
-
-    const sel = document.createElement("select");
-    sel.style.flex = "1";
-
-    const opt0 = document.createElement("option");
-    opt0.value = "";
-    opt0.textContent = "— select player —";
-    sel.appendChild(opt0);
-
-    state.players.forEach(p=>{
-      const opt = document.createElement("option");
-      opt.value = p.id;
-      opt.textContent = `${p.name} (${p.goalsTotal})`;
-      sel.appendChild(opt);
-    });
-
-    sel.value = state.quarters[q].assignments[pos] || "";
-    sel.addEventListener("change", ()=>{
-      setAssignment(pos, sel.value || null);
-    });
-
-    row.appendChild(tag);
-    row.appendChild(sel);
-
-    if(pos==="GS" || pos==="GA"){
-      const btn = document.createElement("button");
-      btn.className = "primary small";
-      btn.textContent = "+1";
-      btn.title = "Credit a goal to this position (LIVE quarter)";
-      btn.addEventListener("click", ()=> scoreFromPosition(pos));
-      row.appendChild(btn);
+    const warnBox = document.getElementById("liveWarnBox");
+    if(g.selectedQ !== g.liveQ){
+      warnBox.style.display = "block";
+      warnBox.textContent =
+        `Heads up: you're editing Q${g.selectedQ+1}, but LIVE scoring is Q${g.liveQ+1}. ` +
+        `Scoring/undo will apply to LIVE (unless you switch).`;
+    } else {
+      warnBox.style.display = "none";
+      warnBox.textContent = "";
     }
 
-    grid.appendChild(row);
-  });
-}
+    if (g.selectedQ !== g.liveQ) {
+      const ok = confirm(
+        `You're editing Q${g.selectedQ+1} but LIVE quarter is Q${g.liveQ+1}.\n\n` +
+        `${actionLabel} to LIVE quarter (Q${g.liveQ+1})?\n\n` +
+        `Press OK = keep LIVE\nPress Cancel = switch LIVE to editing (Q${g.selectedQ+1})`
+      );
+      if (!ok) {
+        g.liveQ = g.selectedQ;
+        q = g.liveQ;
+        saveState();
+      }
+    }
+    return q;
+  }
 
-function renderBench(){
-  const list = document.getElementById("benchList");
-  list.innerHTML = "";
-  const bench = benchPlayersForQ(state.selectedQ);
-  document.getElementById("benchCount").textContent = `${bench.length} on bench`;
+  /* Events + scoring */
+  function pushEvent(game, q, type, payload){
+    game.quarters[q].events.push({ type, q, payload, t: Date.now() });
+    saveState();
+  }
 
-  bench.forEach(p=>{
-    const item = document.createElement("div");
-    item.className = "pill";
-    item.innerHTML = `<div>${escapeHtml(p.name)}</div><div class="muted">Goals: ${p.goalsTotal}</div>`;
-    list.appendChild(item);
-  });
-}
+  function scoreTeam(which, delta){
+    const g = currentGame();
+    const q = resolveScoringQuarter("Add score");
+    if(which==="home"){
+      g.quarters[q].homeScore = clamp0(g.quarters[q].homeScore + delta);
+    } else {
+      g.quarters[q].awayScore = clamp0(g.quarters[q].awayScore + delta);
+    }
+    pushEvent(g, q, "score", { which, delta });
+    renderScores();
+    renderQuarterTable();
+    renderGoalLog();
+  }
 
-function renderStats(){
-  const list = document.getElementById("statsList");
-  list.innerHTML = "";
+  function scoreFromPosition(pos){
+    if(pos!=="GS" && pos!=="GA") return;
 
-  const sorted = [...state.players].sort((a,b)=>(b.goalsTotal-a.goalsTotal) || a.name.localeCompare(b.name));
+    const g = currentGame();
+    const q = resolveScoringQuarter("Credit goal");
 
-  sorted.forEach(p=>{
-    const onCourt = quartersOnCourt(p.id);
-    const item = document.createElement("div");
-    item.className = "pill";
-    item.innerHTML = `
-      <div>
-        <div style="font-weight:900">${escapeHtml(p.name)}</div>
-        <div class="muted">On court: ${onCourt}/4 quarters</div>
-      </div>
-      <div class="right">
-        <div><b>${p.goalsTotal}</b> goals</div>
-        <div class="muted">Q${state.selectedQ+1}: ${p.goalsByQ[state.selectedQ]}</div>
-      </div>
+    const pid = g.quarters[q].assignments[pos];
+    if(!pid) return alert(`Assign a player to ${pos} in LIVE quarter (Q${q+1}) first.`);
+
+    g.quarters[q].homeScore += 1;
+
+    const st = g.playerStats[pid] || (g.playerStats[pid] = { goalsTotal:0, goalsByQ:[0,0,0,0] });
+    st.goalsTotal += 1;
+    st.goalsByQ[q] += 1;
+
+    pushEvent(g, q, "playerGoal", { pid, pos });
+    renderScores();
+    renderStats();
+    renderGoalLog();
+    renderQuarterTable();
+  }
+
+  function undo(){
+    const g = currentGame();
+    const q = resolveScoringQuarter("Undo last event");
+    const events = g.quarters[q].events;
+    const last = events.pop();
+    if(!last) return;
+
+    if(last.type==="score"){
+      const {which, delta} = last.payload;
+      if(which==="home") g.quarters[q].homeScore = clamp0(g.quarters[q].homeScore - delta);
+      else g.quarters[q].awayScore = clamp0(g.quarters[q].awayScore - delta);
+    }
+
+    if(last.type==="playerGoal"){
+      const {pid} = last.payload;
+      g.quarters[q].homeScore = clamp0(g.quarters[q].homeScore - 1);
+      const st = g.playerStats[pid];
+      if(st){
+        st.goalsTotal = clamp0(st.goalsTotal - 1);
+        st.goalsByQ[q] = clamp0(st.goalsByQ[q] - 1);
+      }
+    }
+
+    saveState();
+    renderScores();
+    renderStats();
+    renderGoalLog();
+    renderQuarterTable();
+  }
+
+  /* Assignments (editing quarter) */
+  function setAssignment(pos, pid){
+    const g = currentGame();
+    const q = g.selectedQ;
+
+    if(pid){
+      for(const p of POSITIONS){
+        if(p !== pos && g.quarters[q].assignments[p] === pid){
+          g.quarters[q].assignments[p] = null;
+        }
+      }
+    }
+
+    g.quarters[q].assignments[pos] = pid || null;
+    pushEvent(g, q, "assign", { pos, pid: pid || null });
+    renderPositions();
+    renderBench();
+    renderStats();
+    renderQuarterPositionsAll();
+  }
+
+  /* Copy positions */
+  function populateCopyTargets(){
+    const g = currentGame();
+    const sel = document.getElementById("copyTargetQuarter");
+    if (!sel) return;
+
+    sel.innerHTML = "";
+    for (let i = 0; i < 4; i++) {
+      if (i === g.selectedQ) continue;
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = `Q${i+1}`;
+      sel.appendChild(opt);
+    }
+  }
+
+  function copyAssignments(fromQ, toQ){
+    const g = currentGame();
+    g.quarters[toQ].assignments = JSON.parse(JSON.stringify(g.quarters[fromQ].assignments || {}));
+    saveState();
+  }
+
+  /* Game management */
+  function addGame(){
+    const nextRound = state.games.length + 1;
+    const g = newEmptyGame(nextRound);
+    g.playerStats = initPlayerStats(state.players);
+    state.games.push(g);
+    state.currentGameIndex = state.games.length - 1;
+    saveState();
+    renderAll();
+  }
+
+  function goPrevGame(){
+    if(state.currentGameIndex <= 0) return;
+    state.currentGameIndex -= 1;
+    saveState();
+    renderAll();
+  }
+
+  function goNextGame(){
+    if(state.currentGameIndex >= state.games.length - 1) return;
+    state.currentGameIndex += 1;
+    saveState();
+    renderAll();
+  }
+
+  function resetThisGame(){
+    const idx = state.currentGameIndex;
+    const round = state.games[idx].round;
+    const g = newEmptyGame(round);
+    g.playerStats = initPlayerStats(state.players);
+    // keep opponent name? you can keep it if you want; currently resets it
+    state.games[idx] = g;
+    saveState();
+    renderAll();
+  }
+
+  /* Render */
+  function renderPlayersInputs(){
+    const wrap = document.getElementById("playersInputs");
+    wrap.innerHTML = "";
+    wrap.style.gridTemplateColumns = (window.innerWidth >= 780) ? "1fr 1fr" : "1fr";
+
+    state.players.forEach((p, idx)=>{
+      const div = document.createElement("div");
+      div.className = "row";
+      div.innerHTML = `
+        <div class="grow">
+          <div class="muted">Player ${idx+1}</div>
+          <input type="text" value="${escapeHtml(p.name)}" data-pid="${p.id}" />
+        </div>
+      `;
+      const input = div.querySelector("input");
+      input.addEventListener("input", (e)=>{
+        p.name = e.target.value;
+        // Ensure all games have stats entry for this player (already ensured) + save
+        saveState();
+        renderPositions();
+        renderBench();
+        renderStats();
+        renderQuarterPositionsAll();
+      });
+      wrap.appendChild(div);
+    });
+
+    document.getElementById("teamName").value = state.teamName || "";
+  }
+
+  function renderSeasonHeader(){
+    const g = currentGame();
+
+    document.getElementById("roundLabel").textContent = `Round ${g.round}`;
+    document.getElementById("roundCountLabel").textContent = `(${state.games.length} game${state.games.length===1?'':'s'} in season)`;
+
+    document.getElementById("opponent").value = g.opponent || "";
+    document.getElementById("notes").value = g.notes || "";
+
+    document.getElementById("prevGameBtn").disabled = (state.currentGameIndex <= 0);
+    document.getElementById("nextGameBtn").disabled = (state.currentGameIndex >= state.games.length - 1);
+  }
+
+  function renderQuarterSeg(){
+    const g = currentGame();
+    const seg = document.getElementById("quarterSeg");
+    seg.innerHTML = "";
+    for(let i=0;i<4;i++){
+      const b = document.createElement("button");
+      b.textContent = `Q${i+1}`;
+      b.className = (g.selectedQ===i) ? "active" : "";
+      b.addEventListener("click", ()=>{
+        g.selectedQ = i;
+        saveState();
+        renderAll();
+      });
+      seg.appendChild(b);
+    }
+
+    document.getElementById("editingQuarter").textContent = `Q${g.selectedQ + 1}`;
+    document.getElementById("liveQuarterLabel").textContent = `Q${g.liveQ + 1}`;
+
+    document.getElementById("setLiveToEditingBtn").onclick = () => {
+      g.liveQ = g.selectedQ;
+      saveState();
+      renderScores();
+      renderGoalLog();
+      renderQuarterTable();
+      renderAllQuarterWarn();
+    };
+
+    // Apply quarter colour theme to the Quarter card (editing quarter)
+    const qc = document.getElementById("quarterCard");
+    qc.classList.remove("q1","q2","q3","q4");
+    qc.classList.add(`q${g.selectedQ + 1}`);
+
+    renderAllQuarterWarn();
+  }
+
+  function renderAllQuarterWarn(){
+    const g = currentGame();
+    const warnBox = document.getElementById("liveWarnBox");
+    if(g.selectedQ !== g.liveQ){
+      warnBox.style.display = "block";
+      warnBox.textContent =
+        `Heads up: you're editing Q${g.selectedQ+1}, but LIVE scoring is Q${g.liveQ+1}. ` +
+        `Scoring/undo will apply to LIVE (unless you switch).`;
+    } else {
+      warnBox.style.display = "none";
+      warnBox.textContent = "";
+    }
+  }
+
+  function renderScores(){
+    const g = currentGame();
+    const editQ = g.selectedQ;
+
+    // Quarter display shows EDITING quarter
+    document.getElementById("homeScore").textContent = g.quarters[editQ].homeScore;
+    document.getElementById("awayScore").textContent = g.quarters[editQ].awayScore;
+    document.getElementById("homeQLabel").textContent = g.quarters[editQ].homeScore;
+    document.getElementById("awayQLabel").textContent = g.quarters[editQ].awayScore;
+
+    const team = state.teamName?.trim() ? state.teamName.trim() : "Home";
+    const opp  = g.opponent?.trim() ? g.opponent.trim() : "Away";
+
+    document.getElementById("homeLabel").textContent = team;
+    document.getElementById("awayLabel").textContent = opp;
+
+    document.getElementById("overallScoreLine").textContent = `${totalHome(g)} – ${totalAway(g)}`;
+    document.getElementById("overallLabelLine").textContent = `${team} vs ${opp}`;
+
+    document.getElementById("liveQuarterLabel").textContent = `Q${g.liveQ + 1}`;
+  }
+
+  function renderPositions(){
+    const g = currentGame();
+    const grid = document.getElementById("positionsGrid");
+    grid.innerHTML = "";
+    const q = g.selectedQ; // EDITING quarter
+
+    POSITIONS.forEach(pos=>{
+      const row = document.createElement("div");
+      row.className = "posRow";
+
+      const tag = document.createElement("div");
+      tag.className = "posTag";
+      tag.textContent = pos;
+
+      const sel = document.createElement("select");
+      sel.style.flex = "1";
+
+      const opt0 = document.createElement("option");
+      opt0.value = "";
+      opt0.textContent = "— select player —";
+      sel.appendChild(opt0);
+
+      state.players.forEach(p=>{
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = `${p.name}`;
+        sel.appendChild(opt);
+      });
+
+      sel.value = g.quarters[q].assignments[pos] || "";
+      sel.addEventListener("change", ()=>{
+        setAssignment(pos, sel.value || null);
+      });
+
+      row.appendChild(tag);
+      row.appendChild(sel);
+
+      if(pos==="GS" || pos==="GA"){
+        const btn = document.createElement("button");
+        btn.className = "primary small";
+        btn.textContent = "+1";
+        btn.title = "Credit a goal to this position (LIVE quarter)";
+        btn.addEventListener("click", ()=> scoreFromPosition(pos));
+        row.appendChild(btn);
+      }
+
+      grid.appendChild(row);
+    });
+  }
+
+  function renderBench(){
+    const g = currentGame();
+    const list = document.getElementById("benchList");
+    list.innerHTML = "";
+    const bench = benchPlayersForQ(g, g.selectedQ);
+    document.getElementById("benchCount").textContent = `${bench.length} on bench`;
+
+    bench.forEach(p=>{
+      const item = document.createElement("div");
+      item.className = "pill";
+      const gs = g.playerStats[p.id]?.goalsTotal || 0;
+      const ss = seasonGoalsForPlayer(p.id);
+      item.innerHTML = `<div>${escapeHtml(p.name)}</div><div class="muted">Game goals: ${gs} • Season: ${ss}</div>`;
+      list.appendChild(item);
+    });
+  }
+
+  function renderStats(){
+    const g = currentGame();
+    const list = document.getElementById("statsList");
+    list.innerHTML = "";
+
+    const sorted = [...state.players].sort((a,b)=>{
+      const ga = g.playerStats[a.id]?.goalsTotal || 0;
+      const gb = g.playerStats[b.id]?.goalsTotal || 0;
+      if(gb !== ga) return gb - ga;
+      return a.name.localeCompare(b.name);
+    });
+
+    sorted.forEach(p=>{
+      const gameGoals = g.playerStats[p.id]?.goalsTotal || 0;
+      const seasonGoals = seasonGoalsForPlayer(p.id);
+
+      const gameCourt = quartersOnCourt(g, p.id);
+      const seasonCourt = seasonCourtForPlayer(p.id);
+
+      const item = document.createElement("div");
+      item.className = "pill";
+      item.innerHTML = `
+        <div>
+          <div style="font-weight:900">${escapeHtml(p.name)}</div>
+          <div class="muted">On court: Game ${gameCourt}/4 • Season ${seasonCourt}/${state.games.length*4}</div>
+        </div>
+        <div class="right">
+          <div><b>${gameGoals}</b> game goals</div>
+          <div class="muted"><b>${seasonGoals}</b> season goals</div>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  function renderGoalLog(){
+    const g = currentGame();
+    const log = document.getElementById("goalLog");
+    log.innerHTML = "";
+    const q = g.liveQ; // LIVE quarter
+    const events = g.quarters[q].events.filter(e=>e.type==="playerGoal");
+    if(events.length===0){
+      log.innerHTML = `<div class="muted">No credited goals in LIVE quarter (Q${q+1}) yet.</div>`;
+      return;
+    }
+
+    [...events].reverse().forEach(e=>{
+      const dt = new Date(e.t);
+      const time = dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      const p = playerById(e.payload.pid);
+      const item = document.createElement("div");
+      item.className = "pill";
+      item.innerHTML = `<div>${escapeHtml(p ? p.name : "Unknown")} <span class="muted">(${e.payload.pos})</span></div><div class="muted">${time}</div>`;
+      log.appendChild(item);
+    });
+  }
+
+  function renderQuarterTable(){
+    const g = currentGame();
+    const wrap = document.getElementById("quarterTableWrap");
+    const team = state.teamName?.trim() || "Home";
+    const opp = g.opponent?.trim() || "Away";
+
+    const rows = g.quarters.map((q, i)=>`
+      <tr>
+        <td><b>Q${i+1}</b>${(i===g.liveQ) ? ' <span class="kbd">LIVE</span>' : ''}</td>
+        <td>${q.homeScore}</td>
+        <td>${q.awayScore}</td>
+      </tr>
+    `).join("");
+
+    wrap.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Quarter</th>
+            <th>${escapeHtml(team)}</th>
+            <th>${escapeHtml(opp)}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+          <tr>
+            <td><b>Total</b></td>
+            <td><b>${totalHome(g)}</b></td>
+            <td><b>${totalAway(g)}</b></td>
+          </tr>
+        </tbody>
+      </table>
     `;
-    list.appendChild(item);
-  });
-}
-
-function renderGoalLog(){
-  const log = document.getElementById("goalLog");
-  log.innerHTML = "";
-  const q = state.liveQ; // LIVE quarter
-  const events = state.quarters[q].events.filter(e=>e.type==="playerGoal");
-  if(events.length===0){
-    log.innerHTML = `<div class="muted">No credited goals in LIVE quarter (Q${q+1}) yet.</div>`;
-    return;
   }
 
-  [...events].reverse().forEach(e=>{
-    const dt = new Date(e.t);
-    const time = dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    const p = playerById(e.payload.pid);
-    const item = document.createElement("div");
-    item.className = "pill";
-    item.innerHTML = `<div>${escapeHtml(p ? p.name : "Unknown")} <span class="muted">(${e.payload.pos})</span></div><div class="muted">${time}</div>`;
-    log.appendChild(item);
-  });
-}
+  function renderQuarterPositionsAll(){
+    const g = currentGame();
+    const wrap = document.getElementById("allQuartersPositions");
+    wrap.innerHTML = "";
 
-function renderQuarterTable(){
-  const wrap = document.getElementById("quarterTableWrap");
-  const team = state.teamName?.trim() || "Home";
-  const opp = state.opponent?.trim() || "Away";
+    for(let q=0;q<4;q++){
+      const a = g.quarters[q].assignments;
+      const line = POSITIONS.map(p=>{
+        const pid = a[p];
+        return `<span class="kbd">${p}</span> ${escapeHtml(pid ? playerName(pid) : "—")}`;
+      }).join(" &nbsp; ");
 
-  const rows = state.quarters.map((q, i)=>`
-    <tr>
-      <td><b>Q${i+1}</b>${(i===state.liveQ) ? ' <span class="kbd">LIVE</span>' : ''}</td>
-      <td>${q.homeScore}</td>
-      <td>${q.awayScore}</td>
-    </tr>
-  `).join("");
-
-  wrap.innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>Quarter</th>
-          <th>${escapeHtml(team)}</th>
-          <th>${escapeHtml(opp)}</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rows}
-        <tr>
-          <td><b>Total</b></td>
-          <td><b>${totalHome()}</b></td>
-          <td><b>${totalAway()}</b></td>
-        </tr>
-      </tbody>
-    </table>
-  `;
-}
-
-function renderQuarterPositionsAll(){
-  const wrap = document.getElementById("allQuartersPositions");
-  wrap.innerHTML = "";
-
-  for(let q=0;q<4;q++){
-    const a = state.quarters[q].assignments;
-    const line = POSITIONS.map(p=>{
-      const pid = a[p];
-      return `<span class="kbd">${p}</span> ${escapeHtml(pid ? playerName(pid) : "—")}`;
-    }).join(" &nbsp; ");
-
-    const section = document.createElement("div");
-    section.className = "pill";
-    section.style.display = "block";
-    section.innerHTML = `<div style="font-weight:900;margin-bottom:6px;">Q${q+1}${q===state.liveQ ? ' <span class="kbd">LIVE</span>' : ''}</div><div>${line}</div>`;
-    wrap.appendChild(section);
-  }
-}
-
-function renderAll(){
-  renderPlayersInputs();
-  renderQuarterSeg();
-  renderScores();
-  renderPositions();
-  renderBench();
-  renderStats();
-  renderGoalLog();
-  renderQuarterTable();
-  renderQuarterPositionsAll();
-
-  // Copy targets & wiring
-  populateCopyTargets();
-
-  const copyBtn = document.getElementById("copyPositionsBtn");
-  if (copyBtn) {
-    copyBtn.onclick = () => {
-      const target = Number(document.getElementById("copyTargetQuarter").value);
-      const ok = confirm(`Copy positions from Q${state.selectedQ+1} to Q${target+1}?\nThis will overwrite Q${target+1} positions.`);
-      if (!ok) return;
-      copyAssignments(state.selectedQ, target);
-      renderQuarterPositionsAll();
-      renderStats();
-      alert(`Copied Q${state.selectedQ+1} positions to Q${target+1}.`);
-    };
+      const section = document.createElement("div");
+      section.className = "pill";
+      section.style.display = "block";
+      section.innerHTML = `<div style="font-weight:900;margin-bottom:6px;">Q${q+1}${q===g.liveQ ? ' <span class="kbd">LIVE</span>' : ''}</div><div>${line}</div>`;
+      wrap.appendChild(section);
+    }
   }
 
-  const nextBtn = document.getElementById("copyToNextBtn");
-  if (nextBtn) {
-    nextBtn.onclick = () => {
-      const target = Math.min(3, state.selectedQ + 1);
-      if (target === state.selectedQ) return alert("Already at Q4.");
-      const ok = confirm(`Copy positions from Q${state.selectedQ+1} to Q${target+1}?\nThis will overwrite Q${target+1} positions.`);
-      if (!ok) return;
-      copyAssignments(state.selectedQ, target);
-      renderQuarterPositionsAll();
-      renderStats();
-      alert(`Copied Q${state.selectedQ+1} positions to Q${target+1}.`);
-    };
-  }
-}
+  function renderAll(){
+    ensureIntegrity();
+    renderSeasonHeader();
+    renderPlayersInputs();
+    renderQuarterSeg();
+    renderScores();
+    renderPositions();
+    renderBench();
+    renderStats();
+    renderGoalLog();
+    renderQuarterTable();
+    renderQuarterPositionsAll();
 
-/* Copy helpers */
-async function copyText(text){
-  try{
-    await navigator.clipboard.writeText(text);
-    alert("Copied to clipboard.");
-  } catch {
-    alert("Copy failed (iPad Safari can block clipboard sometimes).");
+    // copy targets + wiring
+    populateCopyTargets();
+    wireCopyButtons();
+    saveState();
   }
-}
 
-function buildRotationsText(){
-  const lines = [];
-  for(let q=0;q<4;q++){
-    const a = state.quarters[q].assignments;
-    const posText = POSITIONS.map(p=>`${p}: ${a[p] ? playerName(a[p]) : "—"}`).join(" | ");
-    lines.push(`Q${q+1}: ${posText}`);
-  }
-  return lines.join("\n");
-}
+  function wireCopyButtons(){
+    const g = currentGame();
 
-function buildGameSummaryText(){
-  const team = state.teamName?.trim() || "Home";
-  const opp = state.opponent?.trim() || "Away";
-  const lines = [];
-  lines.push(`Final/Current: ${team} ${totalHome()} - ${totalAway()} ${opp}`);
-  for(let q=0;q<4;q++){
-    lines.push(`Q${q+1}: ${team} ${state.quarters[q].homeScore} - ${state.quarters[q].awayScore} ${opp}`);
+    const copyBtn = document.getElementById("copyPositionsBtn");
+    if (copyBtn) {
+      copyBtn.onclick = () => {
+        const target = Number(document.getElementById("copyTargetQuarter").value);
+        const ok = confirm(`Copy positions from Q${g.selectedQ+1} to Q${target+1}?\nThis will overwrite Q${target+1} positions.`);
+        if (!ok) return;
+        copyAssignments(g.selectedQ, target);
+        renderQuarterPositionsAll();
+        renderBench();
+        renderStats();
+        alert(`Copied Q${g.selectedQ+1} positions to Q${target+1}.`);
+      };
+    }
+
+    const nextBtn = document.getElementById("copyToNextBtn");
+    if (nextBtn) {
+      nextBtn.onclick = () => {
+        const target = Math.min(3, g.selectedQ + 1);
+        if (target === g.selectedQ) return alert("Already at Q4.");
+        const ok = confirm(`Copy positions from Q${g.selectedQ+1} to Q${target+1}?\nThis will overwrite Q${target+1} positions.`);
+        if (!ok) return;
+        copyAssignments(g.selectedQ, target);
+        renderQuarterPositionsAll();
+        renderBench();
+        renderStats();
+        alert(`Copied Q${g.selectedQ+1} positions to Q${target+1}.`);
+      };
+    }
+
+    const allBtn = document.getElementById("copyToAllBtn");
+    if(allBtn){
+      allBtn.onclick = () => {
+        const ok = confirm(`Copy Q1 positions to Q2–Q4?\nThis will overwrite Q2, Q3, Q4 positions.`);
+        if(!ok) return;
+        copyAssignments(0,1);
+        copyAssignments(0,2);
+        copyAssignments(0,3);
+        renderQuarterPositionsAll();
+        renderBench();
+        renderStats();
+        alert(`Copied Q1 positions to Q2–Q4.`);
+      };
+    }
   }
-  lines.push("");
-  lines.push("Rotations:");
-  lines.push(buildRotationsText());
-  lines.push("");
-  const scorers = [...state.players]
-    .filter(p=>p.goalsTotal>0)
-    .sort((a,b)=>b.goalsTotal-a.goalsTotal)
-    .map(p=>`${p.name} ${p.goalsTotal}`)
-    .join(", ") || "None";
-  lines.push(`Your scorers: ${scorers}`);
-  if(state.notes?.trim()){
+
+  /* Copy helpers */
+  async function copyText(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      alert("Copied to clipboard.");
+    } catch {
+      alert("Copy failed (iPad Safari can block clipboard sometimes).");
+    }
+  }
+
+  function buildRotationsText(game){
+    const lines = [];
+    for(let q=0;q<4;q++){
+      const a = game.quarters[q].assignments;
+      const posText = POSITIONS.map(p=>`${p}: ${a[p] ? playerName(a[p]) : "—"}`).join(" | ");
+      lines.push(`Q${q+1}: ${posText}`);
+    }
+    return lines.join("\n");
+  }
+
+  function buildGameSummaryText(game){
+    const team = state.teamName?.trim() || "Home";
+    const opp = game.opponent?.trim() || "Away";
+    const lines = [];
+    lines.push(`${gameLabel()}  |  ${team} ${totalHome(game)} - ${totalAway(game)} ${opp}`);
+    for(let q=0;q<4;q++){
+      lines.push(`Q${q+1}: ${team} ${game.quarters[q].homeScore} - ${game.quarters[q].awayScore} ${opp}`);
+    }
     lines.push("");
-    lines.push(`Notes: ${state.notes.trim()}`);
+    lines.push("Rotations:");
+    lines.push(buildRotationsText(game));
+    lines.push("");
+
+    const scorers = [...state.players]
+      .map(p=>({ name:p.name, goals:(game.playerStats[p.id]?.goalsTotal || 0) }))
+      .filter(x=>x.goals>0)
+      .sort((a,b)=>b.goals-a.goals)
+      .map(x=>`${x.name} ${x.goals}`)
+      .join(", ") || "None";
+    lines.push(`Your scorers: ${scorers}`);
+
+    if(game.notes?.trim()){
+      lines.push("");
+      lines.push(`Notes: ${game.notes.trim()}`);
+    }
+    return lines.join("\n");
   }
-  return lines.join("\n");
-}
 
-/* Wiring */
-document.getElementById("teamName").addEventListener("input", e=>{
-  state.teamName = e.target.value; saveState();
-  renderScores(); renderQuarterTable();
-});
-document.getElementById("opponent").addEventListener("input", e=>{
-  state.opponent = e.target.value; saveState();
-  renderScores(); renderQuarterTable();
-});
-document.getElementById("notes").addEventListener("input", e=>{
-  state.notes = e.target.value; saveState();
-});
+  function buildSeasonSummaryText(){
+    const team = state.teamName?.trim() || "Home";
+    const lines = [];
+    lines.push(`Season summary for ${team}`);
+    lines.push(`Games: ${state.games.length}`);
+    lines.push("");
 
-document.getElementById("homePlus").addEventListener("click", ()=>scoreTeam("home", +1));
-document.getElementById("homeMinus").addEventListener("click", ()=>scoreTeam("home", -1));
-document.getElementById("awayPlus").addEventListener("click", ()=>scoreTeam("away", +1));
-document.getElementById("awayMinus").addEventListener("click", ()=>scoreTeam("away", -1));
-document.getElementById("undoBtn").addEventListener("click", undo);
+    // Game results
+    lines.push("Game results:");
+    for(const g of state.games){
+      const opp = g.opponent?.trim() || "Away";
+      lines.push(`Round ${g.round}: ${team} ${totalHome(g)} - ${totalAway(g)} ${opp}`);
+    }
+    lines.push("");
 
-document.getElementById("resetAllBtn").addEventListener("click", ()=>{
-  if(confirm("Reset EVERYTHING (names, scores, positions, logs, notes)?")) resetAll();
-});
-document.getElementById("newGameBtn").addEventListener("click", ()=>{
-  if(confirm("Start a NEW game? (Keeps player names, resets scores/positions/goals/logs)")) newGameKeepNames();
-});
+    // Player totals
+    lines.push("Player season goals:");
+    const playersSorted = [...state.players]
+      .map(p=>({ name:p.name, goals:seasonGoalsForPlayer(p.id), court:seasonCourtForPlayer(p.id) }))
+      .sort((a,b)=> (b.goals-a.goals) || a.name.localeCompare(b.name));
 
-document.getElementById("copySummaryBtn").addEventListener("click", ()=> copyText(buildGameSummaryText()));
-document.getElementById("copyRotationsBtn").addEventListener("click", ()=> copyText(buildRotationsText()));
+    for(const p of playersSorted){
+      lines.push(`${p.name}: ${p.goals} goals | ${p.court}/${state.games.length*4} quarters on court`);
+    }
 
-/* PWA offline */
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    return lines.join("\n");
+  }
+
+  /* Wiring */
+  document.getElementById("teamName").addEventListener("input", e=>{
+    state.teamName = e.target.value;
+    saveState();
+    renderScores();
+    renderQuarterTable();
   });
-}
 
-/* initial */
-renderAll();
-saveState();
+  document.getElementById("opponent").addEventListener("input", e=>{
+    const g = currentGame();
+    g.opponent = e.target.value;
+    saveState();
+    renderScores();
+    renderQuarterTable();
+  });
+
+  document.getElementById("notes").addEventListener("input", e=>{
+    const g = currentGame();
+    g.notes = e.target.value;
+    saveState();
+  });
+
+  document.getElementById("homePlus").addEventListener("click", ()=>scoreTeam("home", +1));
+  document.getElementById("homeMinus").addEventListener("click", ()=>scoreTeam("home", -1));
+  document.getElementById("awayPlus").addEventListener("click", ()=>scoreTeam("away", +1));
+  document.getElementById("awayMinus").addEventListener("click", ()=>scoreTeam("away", -1));
+  document.getElementById("undoBtn").addEventListener("click", undo);
+
+  document.getElementById("resetAllBtn").addEventListener("click", ()=>{
+    if(confirm("Reset EVERYTHING (season players, all games, all scores)?")) resetAll();
+  });
+
+  document.getElementById("newGameBtn").addEventListener("click", ()=>{
+    if(confirm(`Reset only ${gameLabel()}? (Keeps players and other rounds)`)) resetThisGame();
+  });
+
+  document.getElementById("addGameBtn").addEventListener("click", ()=>{
+    addGame();
+  });
+
+  document.getElementById("prevGameBtn").addEventListener("click", goPrevGame);
+  document.getElementById("nextGameBtn").addEventListener("click", goNextGame);
+
+  document.getElementById("copySummaryBtn").addEventListener("click", ()=>{
+    copyText(buildGameSummaryText(currentGame()));
+  });
+
+  document.getElementById("copySeasonBtn").addEventListener("click", ()=>{
+    copyText(buildSeasonSummaryText());
+  });
+
+  document.getElementById("copyRotationsBtn").addEventListener("click", ()=>{
+    copyText(buildRotationsText(currentGame()));
+  });
+
+  /* PWA offline */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    });
+  }
+
+  /* initial */
+  renderAll();
 </script>
 </body>
 </html>
