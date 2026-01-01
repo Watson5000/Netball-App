@@ -1,1290 +1,223 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#111111" />
-  <link rel="manifest" href="manifest.json">
-  <title>Netball Rotations</title>
-  <style>
-    :root { --pad: 12px; --r: 14px; --b: 1px solid #ddd; }
-    body { margin:0; font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial; background:#f6f6f6; }
-    header { padding: var(--pad); background:#111; color:#fff; }
-    header h1 { margin:0; font-size:18px; }
-    header .sub { opacity:.85; font-size:13px; margin-top:4px; display:flex; gap:10px; flex-wrap:wrap; }
-    main { padding: var(--pad); display:grid; gap: var(--pad); }
-    .card { background:#fff; border: var(--b); border-radius: var(--r); padding: var(--pad); }
-    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .grow { flex:1; }
-    .seg { display:flex; gap:8px; flex-wrap:wrap; }
-    .seg button { border: var(--b); background:#fff; padding:10px 12px; border-radius: 999px; font-weight:700; }
-    .seg button.active{
-      background:#111;
-      color:#fff;
-      border-color:#111;
-      box-shadow: 0 0 0 4px rgba(0,0,0,0.12);
-      transform: scale(1.06);
-    }
-    button.primary { background:#111; color:#fff; border:1px solid #111; border-radius: 12px; padding:12px 14px; font-weight:800; }
-    button.ghost { background:#fff; border: var(--b); border-radius: 12px; padding:12px 14px; font-weight:800; }
-    button.small { padding:8px 10px; border-radius:10px; font-weight:800; }
-    button.danger { border-color:#c62828; color:#c62828; }
-    select, input[type="text"], input[type="date"] { border: var(--b); border-radius: 12px; padding:10px 12px; font-size:16px; background:#fff; }
-    textarea { width:100%; min-height:70px; border: var(--b); border-radius: 12px; padding:10px 12px; font-size:16px; background:#fff; }
-    .grid7 { display:grid; grid-template-columns: 1fr; gap:10px; }
-    @media (min-width: 780px) { .grid7 { grid-template-columns: 1fr 1fr; } }
-    .posRow { display:flex; gap:10px; align-items:center; }
-    .posTag { width:54px; min-width:54px; text-align:center; padding:8px 0; border-radius:10px; background:#f0f0f0; border: var(--b); font-weight:900; }
-    .scorebox { display:flex; gap:10px; align-items:center; justify-content:space-between; }
-    .score { font-size:24px; font-weight:950; letter-spacing:.5px; }
-    .muted { color:#666; font-size:13px; }
-    .list { display:grid; gap:8px; }
-    .pill { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border: var(--b); border-radius: 12px; background:#fff; }
-    .right { text-align:right; }
-    .kbd { font-family: ui-monospace, Menlo, monospace; font-size:12px; padding:2px 6px; border-radius:8px; background:#eee; border:1px solid #ddd; }
-    table { width:100%; border-collapse:collapse; }
-    th, td { border: var(--b); padding:8px 10px; text-align:left; }
-    th { background:#fafafa; }
-    details summary { cursor:pointer; font-weight:900; }
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Netball Rotations</title>
 
-    /* Quarter colour themes (editing quarter) */
-    .q1 { border-left: 8px solid #1e88e5; }
-    .q2 { border-left: 8px solid #43a047; }
-    .q3 { border-left: 8px solid #fb8c00; }
-    .q4 { border-left: 8px solid #8e24aa; }
-    .q1 .quarterTint { color:#1e88e5; }
-    .q2 .quarterTint { color:#43a047; }
-    .q3 .quarterTint { color:#fb8c00; }
-    .q4 .quarterTint { color:#8e24aa; }
-
-    .warn { padding:10px 12px; border-radius:12px; border:1px solid #ffe082; background:#fff8e1; }
-  </style>
+<style>
+body{font-family:-apple-system,system-ui;margin:0;background:#f5f5f5}
+header{background:#111;color:#fff;padding:12px}
+main{padding:12px;display:grid;gap:12px}
+.card{background:#fff;border:1px solid #ddd;border-radius:14px;padding:12px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grow{flex:1}
+.seg button{border:1px solid #ddd;border-radius:999px;padding:8px 12px;font-weight:700}
+.seg .active{background:#111;color:#fff}
+button.primary{background:#111;color:#fff;border-radius:10px;padding:8px 12px;font-weight:800}
+button.ghost{border:1px solid #ddd;border-radius:10px;padding:8px 12px;font-weight:700}
+.muted{color:#666;font-size:13px}
+.pos{width:48px;text-align:center;font-weight:900}
+select,input{padding:8px;border-radius:10px;border:1px solid #ddd}
+.score{font-size:32px;font-weight:900;line-height:1}
+.right{text-align:right}
+</style>
 </head>
 
 <body>
-<header>
-  <h1>Netball Rotations</h1>
-  <div class="sub">
-    <span>Season mode • permanent players • add games by round • round name/date • +score buttons • live quarter warnings • timer</span>
-    <span id="saveState" class="muted"></span>
-  </div>
-</header>
+<header><b>Netball Rotations</b></header>
 
 <main>
-  <!-- SEASON / GAME HEADER -->
-  <section class="card" id="seasonCard">
-    <div class="row">
-      <div class="grow">
-        <div class="muted">Your Team (season)</div>
-        <input id="teamName" type="text" placeholder="e.g. Tigers" />
-      </div>
 
-      <div class="grow">
-        <div class="muted">Current Game</div>
-        <div style="font-weight:950; font-size:18px;">
-          <span id="roundLabel">Round 1</span> <span class="muted" id="roundCountLabel"></span>
-        </div>
-      </div>
+<!-- SEASON -->
+<section class="card">
+  <div class="row">
+    <input id="teamName" placeholder="Your team" class="grow">
+    <button class="ghost" id="prevGame">◀</button>
+    <b id="roundLabel">Round 1</b>
+    <button class="ghost" id="nextGame">▶</button>
+    <button class="primary" id="addGame">+ Add game</button>
+  </div>
 
-      <button class="ghost small" id="prevGameBtn">◀ Prev</button>
-      <button class="ghost small" id="nextGameBtn">Next ▶</button>
-      <button class="primary small" id="addGameBtn">+ Add Game</button>
-      <button class="ghost small danger" id="resetAllBtn" title="Reset everything (season)">Reset All</button>
+  <div class="row">
+    <input id="roundName" placeholder="Round name" class="grow">
+    <input id="roundDate" type="date">
+    <input id="opponent" placeholder="Opponent" class="grow">
+  </div>
+
+  <div class="row seg" id="roundButtons"></div>
+</section>
+
+<!-- QUARTER / SCORE -->
+<section class="card">
+  <div class="row seg" id="qtrButtons"></div>
+  <div class="muted">Editing <b id="editQ">Q1</b> | Live <b id="liveQ">Q1</b></div>
+
+  <div class="row">
+    <button class="ghost" id="setLive">Set live = editing</button>
+    <button class="primary" id="finishQ">Qtr finished → Next</button>
+  </div>
+
+  <div class="row">
+    <span class="score" id="timer">10:00</span>
+    <select id="minutes">
+      <option>5</option><option>6</option><option>7</option><option>8</option>
+      <option selected>10</option><option>12</option><option>15</option>
+    </select>
+    <button class="primary" id="startTimer">Start</button>
+    <button class="ghost" id="resetTimer">Reset</button>
+  </div>
+
+  <!-- LIVE TOTAL SCORE -->
+  <div class="row" style="align-items:flex-end;">
+    <div>
+      <div class="score" id="homeScore">0</div>
+      <div class="muted" id="homeTeamLabel">Home</div>
     </div>
 
-    <!-- Rounds strip (tap to review any round) -->
-    <div class="row" style="margin-top:10px;">
-      <div class="muted">Rounds:</div>
-      <div class="seg" id="roundSeg"></div>
+    <button class="primary" id="homePlus">+Home</button>
+    <button class="primary" id="gsPlus">+GS (<span id="gsName">—</span>)</button>
+    <button class="primary" id="gaPlus">+GA (<span id="gaName">—</span>)</button>
+    <button class="ghost" id="homeMinus">−</button>
+
+    <div class="grow"></div>
+
+    <div class="right">
+      <div class="score" id="awayScore">0</div>
+      <div class="muted" id="awayTeamLabel">Opponent</div>
     </div>
 
-    <div style="height:10px"></div>
+    <button class="primary" id="awayPlus">+Away</button>
+    <button class="ghost" id="awayMinus">−</button>
+    <button class="ghost" id="undo">Undo</button>
+  </div>
+</section>
 
-    <div class="row">
-      <div class="grow">
-        <div class="muted">Round name (this game)</div>
-        <input id="roundName" type="text" placeholder="e.g. vs Hawks (Home) / Semi Final / etc" />
-      </div>
+<!-- POSITIONS -->
+<section class="card">
+  <b>Positions</b>
+  <div id="positions"></div>
+</section>
 
-      <div class="grow">
-        <div class="muted">Date (this game)</div>
-        <input id="gameDate" type="date" />
-      </div>
-    </div>
-
-    <div style="height:10px"></div>
-
-    <div class="row">
-      <div class="grow">
-        <div class="muted">Opponent (this game)</div>
-        <input id="opponent" type="text" placeholder="e.g. Raptors" />
-      </div>
-
-      <div class="grow">
-        <div class="muted">Quick actions (this game)</div>
-        <div class="row">
-          <button class="ghost small" id="newGameBtn" title="Reset this game (keep players)">Reset This Game</button>
-          <button class="ghost small" id="copySummaryBtn">Copy Game Summary</button>
-          <button class="ghost small" id="copySeasonBtn">Copy Season Summary</button>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- PLAYERS -->
-  <section class="card" id="setupCard">
-    <div class="row">
-      <div class="grow">
-        <div style="font-weight:950;margin-bottom:6px;">Players (permanent for season)</div>
-        <div class="muted">Edit names once. Stats update per game + across season.</div>
-      </div>
-    </div>
-
-    <div style="height:10px"></div>
-    <div class="row" id="playersInputs" style="display:grid; grid-template-columns: 1fr; gap:10px;"></div>
-  </section>
-
-  <!-- QUARTER / SCORE -->
-  <section class="card" id="quarterCard">
-    <div class="row">
-      <div class="grow" style="font-weight:950;">
-        Quarter <span class="quarterTint">(editing)</span>
-      </div>
-      <div class="seg" id="quarterSeg"></div>
-    </div>
-
-    <div class="muted" style="margin-top:8px;">
-      Currently editing: <b id="editingQuarter">Q1</b>
-    </div>
-
-    <div class="row" style="margin-top:10px;">
-      <div class="muted">Live quarter (scoring goes here):</div>
-      <div style="font-weight:950;">
-        <span id="liveQuarterLabel">Q1</span>
-      </div>
-      <button class="ghost small" id="setLiveToEditingBtn">Set live = editing</button>
-      <button class="primary small" id="qtrFinishedBtn">Qtr finished → Next</button>
-    </div>
-
-    <!-- TIMER -->
-    <div class="row" style="margin-top:10px;">
-      <div class="muted">Timer:</div>
-      <div style="font-weight:950; font-size:18px;">
-        <span id="timerDisplay">10:00</span>
-      </div>
-
-      <select id="qtrMinutes" style="max-width:140px;">
-        <option value="5">5 min</option>
-        <option value="6">6 min</option>
-        <option value="7">7 min</option>
-        <option value="8">8 min</option>
-        <option value="10" selected>10 min</option>
-        <option value="12">12 min</option>
-        <option value="15">15 min</option>
-      </select>
-
-      <button class="primary small" id="timerStartBtn">Start</button>
-      <button class="ghost small" id="timerResetBtn">Reset</button>
-    </div>
-
-    <div style="height:12px"></div>
-
-    <div class="row" style="align-items:baseline; justify-content:space-between;">
-      <div class="muted">Overall game</div>
-      <div class="score" id="overallScoreLine">0 – 0</div>
-    </div>
-    <div class="muted" style="margin-top:-6px;">
-      <span id="overallLabelLine">Home vs Away</span>
-    </div>
-
-    <div style="height:10px"></div>
-
-    <div class="scorebox">
-      <div>
-        <div class="muted" id="homeLabel">Home</div>
-        <div class="score" id="homeScore">0</div>
-        <div class="muted">This quarter: <span id="homeQLabel">0</span></div>
-      </div>
-
-      <div class="right">
-        <div class="muted" id="awayLabel">Away</div>
-        <div class="score" id="awayScore">0</div>
-        <div class="muted">This quarter: <span id="awayQLabel">0</span></div>
-      </div>
-    </div>
-
-    <div style="height:10px"></div>
-
-    <div class="row">
-      <button class="primary" id="homePlus">Home +1</button>
-      <button class="ghost" id="homeMinus">Home −1</button>
-      <div class="grow"></div>
-      <button class="primary" id="awayPlus">Away +1</button>
-      <button class="ghost" id="awayMinus">Away −1</button>
-      <button class="ghost" id="undoBtn" title="Undo last event (Live quarter)">Undo</button>
-    </div>
-
-    <div style="height:10px"></div>
-    <div class="muted">
-      Player goal credit: assign who is in <b>GS</b>/<b>GA</b> (LIVE quarter) then tap <span class="kbd">+1</span> beside GS/GA.
-    </div>
-
-    <div style="height:10px"></div>
-    <div class="warn muted" id="liveWarnBox" style="display:none;"></div>
-  </section>
-
-  <!-- POSITIONS -->
-  <section class="card">
-    <div class="row">
-      <div class="grow" style="font-weight:950;">Positions (On Court)</div>
-      <div class="muted">Bench auto-updates (editing quarter)</div>
-    </div>
-
-    <div style="height:10px"></div>
-
-    <div class="row" style="margin-bottom:10px;">
-      <div class="muted">Copy positions from this quarter to:</div>
-      <select id="copyTargetQuarter" style="max-width:140px;"></select>
-      <button class="ghost small" id="copyPositionsBtn">Copy</button>
-      <button class="ghost small" id="copyToNextBtn">Copy to next</button>
-    </div>
-
-    <div class="grid7" id="positionsGrid"></div>
-
-    <div style="height:12px"></div>
-
-    <div class="row">
-      <div class="grow" style="font-weight:950;">Bench (this quarter)</div>
-      <div class="muted" id="benchCount"></div>
-    </div>
-    <div class="list" id="benchList"></div>
-  </section>
-
-  <!-- STATS -->
-  <section class="card">
-    <div class="row">
-      <div class="grow" style="font-weight:950;">Stats</div>
-      <div class="muted">Shows this game + season totals</div>
-    </div>
-    <div style="height:12px"></div>
-    <div class="list" id="statsList"></div>
-
-    <div style="height:12px"></div>
-    <details>
-      <summary>Goal Log (LIVE quarter)</summary>
-      <div style="height:10px"></div>
-      <div class="list" id="goalLog"></div>
-    </details>
-  </section>
-
-  <!-- QUARTER SUMMARY -->
-  <section class="card">
-    <div class="row">
-      <div class="grow" style="font-weight:950;">Quarter Summary (this game)</div>
-      <button class="ghost small" id="copyRotationsBtn">Copy Rotations (Q1–Q4)</button>
-    </div>
-    <div style="height:10px"></div>
-    <div id="quarterTableWrap"></div>
-
-    <div style="height:12px"></div>
-    <details>
-      <summary>All Quarters Positions</summary>
-      <div style="height:10px"></div>
-      <div id="allQuartersPositions"></div>
-    </details>
-  </section>
-
-  <!-- NOTES -->
-  <section class="card">
-    <div class="row">
-      <div class="grow" style="font-weight:950;">Notes (this game)</div>
-      <div class="muted">Saved automatically</div>
-    </div>
-    <div style="height:10px"></div>
-    <textarea id="notes" placeholder="e.g. Injuries, umpire notes, rotation ideas…"></textarea>
-  </section>
 </main>
 
 <script>
-  const POSITIONS = ["GS","GA","WA","C","WD","GD","GK"];
-  const STORAGE_KEY = "netball_season_v3_timer_qtrfinished";
+const POS=["GS","GA","WA","C","WD","GD","GK"];
+let timerInt=null;
 
-  /* ---------- DATA ---------- */
-  function initPlayerStats(players){
-    const stats = {};
-    for(const p of players){
-      stats[p.id] = { goalsTotal: 0, goalsByQ: [0,0,0,0] };
-    }
-    return stats;
+function newGame(r){
+  return {round:r,roundName:"",date:"",opp:"",
+    editQ:0,liveQ:0,mins:10,remain:600,run:false,last:0,
+    qs:[...Array(4)].map(()=>({a:{},h:0,o:0}))}
+}
+
+let S=JSON.parse(localStorage.netball||"null")||{
+  team:"",players:[...Array(10)].map((_,i)=>({id:i,n:"Player "+(i+1)})),
+  games:[newGame(1)],cur:0
+};
+
+function g(){return S.games[S.cur]}
+function save(){localStorage.netball=JSON.stringify(S)}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}
+function totals(G){return{
+  h:G.qs.reduce((s,q)=>s+q.h,0),
+  o:G.qs.reduce((s,q)=>s+q.o,0)
+}}
+
+function render(){
+  const G=g();
+  teamName.value=S.team;
+  roundLabel.textContent="Round "+G.round;
+  roundName.value=G.roundName;
+  roundDate.value=G.date;
+  opponent.value=G.opp;
+
+  editQ.textContent="Q"+(G.editQ+1);
+  liveQ.textContent="Q"+(G.liveQ+1);
+  timer.textContent=fmt(G.remain);
+
+  const t=totals(G);
+  homeScore.textContent=t.h;
+  awayScore.textContent=t.o;
+  homeTeamLabel.textContent=S.team||"Home";
+  awayTeamLabel.textContent=G.opp||"Opponent";
+
+  qtrButtons.innerHTML="";
+  for(let i=0;i<4;i++){
+    let b=document.createElement("button");
+    b.textContent="Q"+(i+1);
+    if(i===G.editQ)b.className="active";
+    b.onclick=()=>{G.editQ=i;G.run=false;G.remain=G.mins*60;render()}
+    qtrButtons.appendChild(b);
   }
 
-  function newEmptyGame(roundNumber, players){
-    return {
-      round: roundNumber,      // 1-based
-      roundName: "",
-      gameDate: "",            // yyyy-mm-dd
-      opponent: "",
-      notes: "",
-      selectedQ: 0,            // editing quarter
-      liveQ: 0,                // scoring quarter
-
-      // timer (per game)
-      qtrMinutes: 10,
-      timerRunning: false,
-      timerRemaining: 10 * 60,
-      timerLastTick: 0,
-
-      quarters: Array.from({length:4}, ()=>({
-        assignments: {},       // position -> playerId
-        homeScore: 0,
-        awayScore: 0,
-        events: []             // {type, q, payload, t}
-      })),
-      playerStats: initPlayerStats(players)
-    };
-  }
-
-  function defaultState(){
-    const players = Array.from({length:10}, (_,i)=>({
-      id: crypto.randomUUID(),
-      name: `Player ${i+1}`
-    }));
-    return {
-      teamName: "",
-      players,
-      games: [newEmptyGame(1, players)],
-      currentGameIndex: 0
-    };
-  }
-
-  let state = loadState() || defaultState();
-  ensureIntegrity();
-
-  function ensureIntegrity(){
-    if(!state.players || state.players.length !== 10){
-      state.players = state.players && state.players.length
-        ? state.players
-        : Array.from({length:10}, (_,i)=>({id:crypto.randomUUID(), name:`Player ${i+1}`}));
-    }
-    if(!state.games || state.games.length === 0){
-      state.games = [newEmptyGame(1, state.players)];
-      state.currentGameIndex = 0;
-    }
-    if(state.currentGameIndex == null) state.currentGameIndex = 0;
-    if(state.currentGameIndex < 0) state.currentGameIndex = 0;
-    if(state.currentGameIndex >= state.games.length) state.currentGameIndex = state.games.length - 1;
-
-    for(const g of state.games){
-      if(g.roundName == null) g.roundName = "";
-      if(g.gameDate == null) g.gameDate = "";
-      if(g.selectedQ == null) g.selectedQ = 0;
-      if(g.liveQ == null) g.liveQ = g.selectedQ || 0;
-
-      // timer defaults/back-compat
-      if(g.qtrMinutes == null) g.qtrMinutes = 10;
-      if(g.timerRunning == null) g.timerRunning = false;
-      if(g.timerRemaining == null) g.timerRemaining = g.qtrMinutes * 60;
-      if(g.timerLastTick == null) g.timerLastTick = 0;
-
-      if(!g.playerStats) g.playerStats = {};
-      for(const p of state.players){
-        if(!g.playerStats[p.id]){
-          g.playerStats[p.id] = { goalsTotal:0, goalsByQ:[0,0,0,0] };
-        }
-      }
-    }
-  }
-
-  function saveState(){
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    const el = document.getElementById("saveState");
-    el.textContent = "Saved ✓";
-    setTimeout(()=> el.textContent = "", 800);
-  }
-
-  function loadState(){
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-  }
-
-  function resetAll(){
-    stopTimerLoop();
-    state = defaultState();
-    saveState();
-    renderAll();
-  }
-
-  function currentGame(){
-    return state.games[state.currentGameIndex];
-  }
-
-  /* ---------- HELPERS ---------- */
-  function escapeHtml(str){
-    return (str || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  }
-  function playerById(id){ return state.players.find(p=>p.id===id); }
-  function playerName(id){ const p=playerById(id); return p? p.name : "—"; }
-  function clamp0(n){ return Math.max(0, n); }
-
-  function assignedIdsForQ(game, q){
-    const a = game.quarters[q].assignments;
-    return new Set(Object.values(a).filter(Boolean));
-  }
-  function benchPlayersForQ(game, q){
-    const assigned = assignedIdsForQ(game, q);
-    return state.players.filter(p=>!assigned.has(p.id));
-  }
-  function totalHome(game){ return game.quarters.reduce((s,q)=>s+q.homeScore,0); }
-  function totalAway(game){ return game.quarters.reduce((s,q)=>s+q.awayScore,0); }
-  function quartersOnCourt(game, playerId){
-    let count = 0;
-    for(let q=0;q<4;q++){
-      const assigned = assignedIdsForQ(game, q);
-      if(assigned.has(playerId)) count++;
-    }
-    return count;
-  }
-
-  function seasonGoalsForPlayer(playerId){
-    return state.games.reduce((sum,g)=> sum + (g.playerStats[playerId]?.goalsTotal || 0), 0);
-  }
-  function seasonCourtForPlayer(playerId){
-    return state.games.reduce((sum,g)=> sum + quartersOnCourt(g, playerId), 0);
-  }
-
-  function formatShortDate(iso){
-    if(!iso) return "";
-    const [y,m,d] = iso.split("-");
-    if(!y || !m || !d) return iso;
-    return `${d}/${m}`;
-  }
-
-  /* ---------- LIVE QUARTER WARNING ---------- */
-  function renderAllQuarterWarn(){
-    const g = currentGame();
-    const warnBox = document.getElementById("liveWarnBox");
-    if(g.selectedQ !== g.liveQ){
-      warnBox.style.display = "block";
-      warnBox.textContent =
-        `Heads up: you're editing Q${g.selectedQ+1}, but LIVE scoring is Q${g.liveQ+1}. ` +
-        `Scoring/undo applies to LIVE quarter.`;
-    } else {
-      warnBox.style.display = "none";
-      warnBox.textContent = "";
-    }
-  }
-
-  /* ---------- TIMER ---------- */
-  let timerInterval = null;
-
-  function fmtTime(sec){
-    sec = Math.max(0, Math.floor(sec));
-    const m = String(Math.floor(sec / 60)).padStart(2,"0");
-    const s = String(sec % 60).padStart(2,"0");
-    return `${m}:${s}`;
-  }
-
-  function renderTimer(){
-    const g = currentGame();
-    const display = document.getElementById("timerDisplay");
-    const btn = document.getElementById("timerStartBtn");
-    const minsSel = document.getElementById("qtrMinutes");
-    if(!display || !btn || !minsSel) return;
-
-    display.textContent = fmtTime(g.timerRemaining);
-    btn.textContent = g.timerRunning ? "Pause" : "Start";
-    minsSel.value = String(g.qtrMinutes);
-  }
-
-  function tickTimer(){
-    const g = currentGame();
-    if(!g.timerRunning) return;
-
-    const now = Date.now();
-    if(!g.timerLastTick) g.timerLastTick = now;
-
-    const delta = Math.floor((now - g.timerLastTick) / 1000);
-    if(delta <= 0) return;
-
-    g.timerRemaining = Math.max(0, g.timerRemaining - delta);
-    g.timerLastTick = now;
-
-    if(g.timerRemaining === 0){
-      g.timerRunning = false;
-      stopTimerLoop();
-      saveState();
-      renderTimer();
-      alert("Time!");
-      return;
-    }
-
-    saveState();
-    renderTimer();
-  }
-
-  function startTimerLoop(){
-    if(timerInterval) return;
-    timerInterval = setInterval(tickTimer, 250);
-  }
-
-  function stopTimerLoop(){
-    if(!timerInterval) return;
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
-
-  function toggleTimer(){
-    const g = currentGame();
-
-    if(g.timerRunning){
-      g.timerRunning = false;
-      saveState();
-      stopTimerLoop();
-      renderTimer();
-      return;
-    }
-
-    g.timerRunning = true;
-    g.timerLastTick = Date.now();
-    saveState();
-    startTimerLoop();
-    renderTimer();
-  }
-
-  function resetTimer(){
-    const g = currentGame();
-    g.timerRunning = false;
-    g.timerRemaining = g.qtrMinutes * 60;
-    g.timerLastTick = 0;
-    saveState();
-    stopTimerLoop();
-    renderTimer();
-  }
-
-  /* ---------- QUARTER FINISHED ---------- */
-  function finishQuarter(){
-    const g = currentGame();
-
-    if (g.liveQ >= 3) {
-      alert("You’re already on Q4 (last quarter).");
-      return;
-    }
-
-    // stop + reset timer for the next quarter
-    resetTimer();
-
-    g.liveQ += 1;
-    g.selectedQ = g.liveQ;
-    saveState();
-    renderAll();
-  }
-
-  /* ---------- SCORING + EVENTS ---------- */
-  function pushEvent(game, q, type, payload){
-    game.quarters[q].events.push({ type, q, payload, t: Date.now() });
-    saveState();
-  }
-
-  function scoreTeam(which, delta){
-    const g = currentGame();
-    const q = g.liveQ;
-
-    if(which==="home"){
-      g.quarters[q].homeScore = clamp0(g.quarters[q].homeScore + delta);
-    } else {
-      g.quarters[q].awayScore = clamp0(g.quarters[q].awayScore + delta);
-    }
-
-    pushEvent(g, q, "score", { which, delta });
-    renderScores();
-    renderQuarterTable();
-    renderGoalLog();
-    renderRoundSeg();
-    renderAllQuarterWarn();
-  }
-
-  function scoreFromPosition(pos){
-    if(pos!=="GS" && pos!=="GA") return;
-
-    const g = currentGame();
-    const q = g.liveQ;
-
-    const pid = g.quarters[q].assignments[pos];
-    if(!pid) return alert(`Assign a player to ${pos} in LIVE quarter (Q${q+1}) first.`);
-
-    g.quarters[q].homeScore += 1;
-
-    const st = g.playerStats[pid] || (g.playerStats[pid] = { goalsTotal:0, goalsByQ:[0,0,0,0] });
-    st.goalsTotal += 1;
-    st.goalsByQ[q] += 1;
-
-    pushEvent(g, q, "playerGoal", { pid, pos });
-    renderScores();
-    renderStats();
-    renderGoalLog();
-    renderQuarterTable();
-    renderRoundSeg();
-    renderAllQuarterWarn();
-  }
-
-  function undo(){
-    const g = currentGame();
-    const q = g.liveQ;
-
-    const events = g.quarters[q].events;
-    const last = events.pop();
-    if(!last) return;
-
-    if(last.type==="score"){
-      const {which, delta} = last.payload;
-      if(which==="home") g.quarters[q].homeScore = clamp0(g.quarters[q].homeScore - delta);
-      else g.quarters[q].awayScore = clamp0(g.quarters[q].awayScore - delta);
-    }
-
-    if(last.type==="playerGoal"){
-      const {pid} = last.payload;
-      g.quarters[q].homeScore = clamp0(g.quarters[q].homeScore - 1);
-      const st = g.playerStats[pid];
-      if(st){
-        st.goalsTotal = clamp0(st.goalsTotal - 1);
-        st.goalsByQ[q] = clamp0(st.goalsByQ[q] - 1);
-      }
-    }
-
-    saveState();
-    renderScores();
-    renderStats();
-    renderGoalLog();
-    renderQuarterTable();
-    renderRoundSeg();
-    renderAllQuarterWarn();
-  }
-
-  /* ---------- ASSIGNMENTS (EDITING QUARTER) ---------- */
-  function setAssignment(pos, pid){
-    const g = currentGame();
-    const q = g.selectedQ;
-
-    // prevent same player in two positions in same quarter
-    if(pid){
-      for(const p of POSITIONS){
-        if(p !== pos && g.quarters[q].assignments[p] === pid){
-          g.quarters[q].assignments[p] = null;
-        }
-      }
-    }
-
-    g.quarters[q].assignments[pos] = pid || null;
-    pushEvent(g, q, "assign", { pos, pid: pid || null });
-    renderPositions();
-    renderBench();
-    renderStats();
-    renderQuarterPositionsAll();
-  }
-
-  /* ---------- COPY POSITIONS ---------- */
-  function populateCopyTargets(){
-    const g = currentGame();
-    const sel = document.getElementById("copyTargetQuarter");
-    if (!sel) return;
-
-    sel.innerHTML = "";
-    for (let i = 0; i < 4; i++) {
-      if (i === g.selectedQ) continue;
-      const opt = document.createElement("option");
-      opt.value = i;
-      opt.textContent = `Q${i+1}`;
-      sel.appendChild(opt);
-    }
-  }
-
-  function copyAssignments(fromQ, toQ){
-    const g = currentGame();
-    g.quarters[toQ].assignments = JSON.parse(JSON.stringify(g.quarters[fromQ].assignments || {}));
-    saveState();
-  }
-
-  /* ---------- GAME MANAGEMENT ---------- */
-  function addGame(){
-    const nextRound = state.games.length + 1;
-    const g = newEmptyGame(nextRound, state.players);
-    state.games.push(g);
-    state.currentGameIndex = state.games.length - 1;
-
-    stopTimerLoop(); // prevent any old interval confusion
-    saveState();
-    renderAll();
-  }
-
-  function goPrevGame(){
-    if(state.currentGameIndex <= 0) return;
-    stopTimerLoop();
-    state.currentGameIndex -= 1;
-    saveState();
-    renderAll();
-  }
-
-  function goNextGame(){
-    if(state.currentGameIndex >= state.games.length - 1) return;
-    stopTimerLoop();
-    state.currentGameIndex += 1;
-    saveState();
-    renderAll();
-  }
-
-  function resetThisGame(){
-    stopTimerLoop();
-    const idx = state.currentGameIndex;
-    const round = state.games[idx].round;
-    state.games[idx] = newEmptyGame(round, state.players);
-    saveState();
-    renderAll();
-  }
-
-  /* ---------- RENDER ---------- */
-  function renderSeasonHeader(){
-    const g = currentGame();
-    document.getElementById("roundLabel").textContent = `Round ${g.round}`;
-    document.getElementById("roundCountLabel").textContent = `(${state.games.length} game${state.games.length===1?'':'s'} in season)`;
-    document.getElementById("opponent").value = g.opponent || "";
-    document.getElementById("roundName").value = g.roundName || "";
-    document.getElementById("gameDate").value = g.gameDate || "";
-    document.getElementById("notes").value = g.notes || "";
-    document.getElementById("teamName").value = state.teamName || "";
-
-    document.getElementById("prevGameBtn").disabled = (state.currentGameIndex <= 0);
-    document.getElementById("nextGameBtn").disabled = (state.currentGameIndex >= state.games.length - 1);
-  }
-
-  function renderRoundSeg(){
-    const seg = document.getElementById("roundSeg");
-    if(!seg) return;
-
-    seg.innerHTML = "";
-    for(let i=0; i<state.games.length; i++){
-      const g = state.games[i];
-      const b = document.createElement("button");
-
-      const d = formatShortDate(g.gameDate);
-      const opp = (g.opponent || "").trim();
-      const name = (g.roundName || "").trim();
-      const nameShort = name.length > 10 ? (name.slice(0,10) + "…") : name;
-
-      const parts = [`R${g.round}`];
-      if(d) parts.push(d);
-      if(opp) parts.push(opp);
-      if(nameShort) parts.push(nameShort);
-
-      b.textContent = parts.join(" • ");
-      b.className = (i === state.currentGameIndex) ? "active" : "";
-      b.addEventListener("click", ()=>{
-        stopTimerLoop();
-        state.currentGameIndex = i;
-        saveState();
-        renderAll();
-      });
-      seg.appendChild(b);
-    }
-  }
-
-  function renderPlayersInputs(){
-    const wrap = document.getElementById("playersInputs");
-    wrap.innerHTML = "";
-    wrap.style.gridTemplateColumns = (window.innerWidth >= 780) ? "1fr 1fr" : "1fr";
-
-    state.players.forEach((p, idx)=>{
-      const div = document.createElement("div");
-      div.className = "row";
-      div.innerHTML = `
-        <div class="grow">
-          <div class="muted">Player ${idx+1}</div>
-          <input type="text" value="${escapeHtml(p.name)}" data-pid="${p.id}" />
-        </div>
-      `;
-      const input = div.querySelector("input");
-      input.addEventListener("input", (e)=>{
-        p.name = e.target.value;
-        saveState();
-        renderPositions();
-        renderBench();
-        renderStats();
-        renderQuarterPositionsAll();
-        renderRoundSeg();
-      });
-      wrap.appendChild(div);
-    });
-  }
-
-  function renderQuarterSeg(){
-    const g = currentGame();
-    const seg = document.getElementById("quarterSeg");
-    seg.innerHTML = "";
-    for(let i=0;i<4;i++){
-      const b = document.createElement("button");
-      b.textContent = `Q${i+1}`;
-      b.className = (g.selectedQ===i) ? "active" : "";
-      b.addEventListener("click", ()=>{
-        g.selectedQ = i;
-        // timer resets on quarter switch, but DOES NOT auto-start
-        resetTimer();
-        saveState();
-        renderAll();
-      });
-      seg.appendChild(b);
-    }
-
-    document.getElementById("editingQuarter").textContent = `Q${g.selectedQ + 1}`;
-    document.getElementById("liveQuarterLabel").textContent = `Q${g.liveQ + 1}`;
-
-    document.getElementById("setLiveToEditingBtn").onclick = () => {
-      g.liveQ = g.selectedQ;
-      saveState();
-      renderScores();
-      renderGoalLog();
-      renderQuarterTable();
-      renderAllQuarterWarn();
-    };
-
-    // colour theme based on EDITING quarter
-    const qc = document.getElementById("quarterCard");
-    qc.classList.remove("q1","q2","q3","q4");
-    qc.classList.add(`q${g.selectedQ + 1}`);
-
-    renderAllQuarterWarn();
-  }
-
-  function renderScores(){
-    const g = currentGame();
-    const editQ = g.selectedQ;
-
-    document.getElementById("homeScore").textContent = g.quarters[editQ].homeScore;
-    document.getElementById("awayScore").textContent = g.quarters[editQ].awayScore;
-    document.getElementById("homeQLabel").textContent = g.quarters[editQ].homeScore;
-    document.getElementById("awayQLabel").textContent = g.quarters[editQ].awayScore;
-
-    const team = state.teamName?.trim() ? state.teamName.trim() : "Home";
-    const opp  = g.opponent?.trim() ? g.opponent.trim() : "Away";
-
-    document.getElementById("homeLabel").textContent = team;
-    document.getElementById("awayLabel").textContent = opp;
-
-    document.getElementById("overallScoreLine").textContent = `${totalHome(g)} – ${totalAway(g)}`;
-    document.getElementById("overallLabelLine").textContent = `${team} vs ${opp}`;
-
-    document.getElementById("liveQuarterLabel").textContent = `Q${g.liveQ + 1}`;
-  }
-
-  function renderPositions(){
-    const g = currentGame();
-    const grid = document.getElementById("positionsGrid");
-    grid.innerHTML = "";
-    const q = g.selectedQ; // editing quarter
-
-    POSITIONS.forEach(pos=>{
-      const row = document.createElement("div");
-      row.className = "posRow";
-
-      const tag = document.createElement("div");
-      tag.className = "posTag";
-      tag.textContent = pos;
-
-      const sel = document.createElement("select");
-      sel.style.flex = "1";
-
-      const opt0 = document.createElement("option");
-      opt0.value = "";
-      opt0.textContent = "— select player —";
-      sel.appendChild(opt0);
-
-      state.players.forEach(p=>{
-        const opt = document.createElement("option");
-        opt.value = p.id;
-        opt.textContent = `${p.name}`;
-        sel.appendChild(opt);
-      });
-
-      sel.value = g.quarters[q].assignments[pos] || "";
-      sel.addEventListener("change", ()=>{
-        setAssignment(pos, sel.value || null);
-      });
-
-      row.appendChild(tag);
-      row.appendChild(sel);
-
-      if(pos==="GS" || pos==="GA"){
-        const btn = document.createElement("button");
-        btn.className = "primary small";
-        btn.textContent = "+1";
-        btn.title = "Credit a goal to this position (LIVE quarter)";
-        btn.addEventListener("click", ()=> scoreFromPosition(pos));
-        row.appendChild(btn);
-      }
-
-      grid.appendChild(row);
-    });
-  }
-
-  function renderBench(){
-    const g = currentGame();
-    const list = document.getElementById("benchList");
-    list.innerHTML = "";
-    const bench = benchPlayersForQ(g, g.selectedQ);
-    document.getElementById("benchCount").textContent = `${bench.length} on bench`;
-
-    bench.forEach(p=>{
-      const item = document.createElement("div");
-      item.className = "pill";
-      const gs = g.playerStats[p.id]?.goalsTotal || 0;
-      const ss = seasonGoalsForPlayer(p.id);
-      item.innerHTML = `<div>${escapeHtml(p.name)}</div><div class="muted">Game goals: ${gs} • Season: ${ss}</div>`;
-      list.appendChild(item);
-    });
-  }
-
-  function renderStats(){
-    const g = currentGame();
-    const list = document.getElementById("statsList");
-    list.innerHTML = "";
-
-    const sorted = [...state.players].sort((a,b)=>{
-      const ga = g.playerStats[a.id]?.goalsTotal || 0;
-      const gb = g.playerStats[b.id]?.goalsTotal || 0;
-      if(gb !== ga) return gb - ga;
-      return a.name.localeCompare(b.name);
-    });
-
-    sorted.forEach(p=>{
-      const gameGoals = g.playerStats[p.id]?.goalsTotal || 0;
-      const seasonGoals = seasonGoalsForPlayer(p.id);
-      const gameCourt = quartersOnCourt(g, p.id);
-      const seasonCourt = seasonCourtForPlayer(p.id);
-
-      const item = document.createElement("div");
-      item.className = "pill";
-      item.innerHTML = `
-        <div>
-          <div style="font-weight:900">${escapeHtml(p.name)}</div>
-          <div class="muted">On court: Game ${gameCourt}/4 • Season ${seasonCourt}/${state.games.length*4}</div>
-        </div>
-        <div class="right">
-          <div><b>${gameGoals}</b> game goals</div>
-          <div class="muted"><b>${seasonGoals}</b> season goals</div>
-        </div>
-      `;
-      list.appendChild(item);
-    });
-  }
-
-  function renderGoalLog(){
-    const g = currentGame();
-    const log = document.getElementById("goalLog");
-    log.innerHTML = "";
-    const q = g.liveQ;
-    const events = g.quarters[q].events.filter(e=>e.type==="playerGoal");
-    if(events.length===0){
-      log.innerHTML = `<div class="muted">No credited goals in LIVE quarter (Q${q+1}) yet.</div>`;
-      return;
-    }
-
-    [...events].reverse().forEach(e=>{
-      const dt = new Date(e.t);
-      const time = dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-      const p = playerById(e.payload.pid);
-      const item = document.createElement("div");
-      item.className = "pill";
-      item.innerHTML = `<div>${escapeHtml(p ? p.name : "Unknown")} <span class="muted">(${e.payload.pos})</span></div><div class="muted">${time}</div>`;
-      log.appendChild(item);
-    });
-  }
-
-  function renderQuarterTable(){
-    const g = currentGame();
-    const wrap = document.getElementById("quarterTableWrap");
-    const team = state.teamName?.trim() || "Home";
-    const opp = g.opponent?.trim() || "Away";
-
-    const rows = g.quarters.map((q, i)=>`
-      <tr>
-        <td><b>Q${i+1}</b>${(i===g.liveQ) ? ' <span class="kbd">LIVE</span>' : ''}</td>
-        <td>${q.homeScore}</td>
-        <td>${q.awayScore}</td>
-      </tr>
-    `).join("");
-
-    wrap.innerHTML = `
-      <table>
-        <thead>
-          <tr>
-            <th>Quarter</th>
-            <th>${escapeHtml(team)}</th>
-            <th>${escapeHtml(opp)}</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows}
-          <tr>
-            <td><b>Total</b></td>
-            <td><b>${totalHome(g)}</b></td>
-            <td><b>${totalAway(g)}</b></td>
-          </tr>
-        </tbody>
-      </table>
-    `;
-  }
-
-  function renderQuarterPositionsAll(){
-    const g = currentGame();
-    const wrap = document.getElementById("allQuartersPositions");
-    wrap.innerHTML = "";
-
-    for(let q=0;q<4;q++){
-      const a = g.quarters[q].assignments;
-      const line = POSITIONS.map(p=>{
-        const pid = a[p];
-        return `<span class="kbd">${p}</span> ${escapeHtml(pid ? playerName(pid) : "—")}`;
-      }).join(" &nbsp; ");
-
-      const section = document.createElement("div");
-      section.className = "pill";
-      section.style.display = "block";
-      section.innerHTML = `<div style="font-weight:900;margin-bottom:6px;">Q${q+1}${q===g.liveQ ? ' <span class="kbd">LIVE</span>' : ''}</div><div>${line}</div>`;
-      wrap.appendChild(section);
-    }
-  }
-
-  function wireCopyButtons(){
-    const g = currentGame();
-
-    const copyBtn = document.getElementById("copyPositionsBtn");
-    if (copyBtn) {
-      copyBtn.onclick = () => {
-        const target = Number(document.getElementById("copyTargetQuarter").value);
-        const ok = confirm(`Copy positions from Q${g.selectedQ+1} to Q${target+1}?\nThis will overwrite Q${target+1} positions.`);
-        if (!ok) return;
-        copyAssignments(g.selectedQ, target);
-        renderQuarterPositionsAll();
-        renderBench();
-        renderStats();
-        alert(`Copied Q${g.selectedQ+1} positions to Q${target+1}.`);
-      };
-    }
-
-    const nextBtn = document.getElementById("copyToNextBtn");
-    if (nextBtn) {
-      nextBtn.onclick = () => {
-        const target = Math.min(3, g.selectedQ + 1);
-        if (target === g.selectedQ) return alert("Already at Q4.");
-        const ok = confirm(`Copy positions from Q${g.selectedQ+1} to Q${target+1}?\nThis will overwrite Q${target+1} positions.`);
-        if (!ok) return;
-        copyAssignments(g.selectedQ, target);
-        renderQuarterPositionsAll();
-        renderBench();
-        renderStats();
-        alert(`Copied Q${g.selectedQ+1} positions to Q${target+1}.`);
-      };
-    }
-  }
-
-  /* ---------- COPY TEXT ---------- */
-  async function copyText(text){
-    try{
-      await navigator.clipboard.writeText(text);
-      alert("Copied to clipboard.");
-    } catch {
-      alert("Copy failed (iPad Safari can block clipboard sometimes).");
-    }
-  }
-
-  function buildRotationsText(game){
-    const lines = [];
-    for(let q=0;q<4;q++){
-      const a = game.quarters[q].assignments;
-      const posText = POSITIONS.map(p=>`${p}: ${a[p] ? playerName(a[p]) : "—"}`).join(" | ");
-      lines.push(`Q${q+1}: ${posText}`);
-    }
-    return lines.join("\n");
-  }
-
-  function buildGameSummaryText(game){
-    const team = state.teamName?.trim() || "Home";
-    const opp = game.opponent?.trim() || "Away";
-    const titleBits = [`Round ${game.round}`];
-    if(game.gameDate) titleBits.push(game.gameDate);
-    if((game.roundName||"").trim()) titleBits.push(game.roundName.trim());
-
-    const lines = [];
-    lines.push(`${titleBits.join(" • ")}`);
-    lines.push(`${team} ${totalHome(game)} - ${totalAway(game)} ${opp}`);
-    for(let q=0;q<4;q++){
-      lines.push(`Q${q+1}: ${team} ${game.quarters[q].homeScore} - ${game.quarters[q].awayScore} ${opp}`);
-    }
-    lines.push("");
-    lines.push("Rotations:");
-    lines.push(buildRotationsText(game));
-    lines.push("");
-
-    const scorers = [...state.players]
-      .map(p=>({ name:p.name, goals:(game.playerStats[p.id]?.goalsTotal || 0) }))
-      .filter(x=>x.goals>0)
-      .sort((a,b)=>b.goals-a.goals)
-      .map(x=>`${x.name} ${x.goals}`)
-      .join(", ") || "None";
-    lines.push(`Your scorers: ${scorers}`);
-
-    if(game.notes?.trim()){
-      lines.push("");
-      lines.push(`Notes: ${game.notes.trim()}`);
-    }
-    return lines.join("\n");
-  }
-
-  function buildSeasonSummaryText(){
-    const team = state.teamName?.trim() || "Home";
-    const lines = [];
-    lines.push(`Season summary for ${team}`);
-    lines.push(`Games: ${state.games.length}`);
-    lines.push("");
-
-    lines.push("Game results:");
-    for(const g of state.games){
-      const opp = g.opponent?.trim() || "Away";
-      const bits = [`Round ${g.round}`];
-      if(g.gameDate) bits.push(g.gameDate);
-      if((g.roundName||"").trim()) bits.push(g.roundName.trim());
-      lines.push(`${bits.join(" • ")}: ${team} ${totalHome(g)} - ${totalAway(g)} ${opp}`);
-    }
-    lines.push("");
-
-    lines.push("Player season goals:");
-    const playersSorted = [...state.players]
-      .map(p=>({ name:p.name, goals:seasonGoalsForPlayer(p.id), court:seasonCourtForPlayer(p.id) }))
-      .sort((a,b)=> (b.goals-a.goals) || a.name.localeCompare(b.name));
-
-    for(const p of playersSorted){
-      lines.push(`${p.name}: ${p.goals} goals | ${p.court}/${state.games.length*4} quarters on court`);
-    }
-
-    return lines.join("\n");
-  }
-
-  /* ---------- MAIN RENDER ---------- */
-  function renderAll(){
-    ensureIntegrity();
-    renderSeasonHeader();
-    renderRoundSeg();
-    renderPlayersInputs();
-    renderQuarterSeg();
-    renderScores();
-    renderPositions();
-    renderBench();
-    renderStats();
-    renderGoalLog();
-    renderQuarterTable();
-    renderQuarterPositionsAll();
-    populateCopyTargets();
-    wireCopyButtons();
-    renderTimer();
-    renderAllQuarterWarn();
-    saveState();
-  }
-
-  /* ---------- WIRING ---------- */
-  document.getElementById("teamName").addEventListener("input", e=>{
-    state.teamName = e.target.value;
-    saveState();
-    renderScores();
-    renderQuarterTable();
-    renderRoundSeg();
+  roundButtons.innerHTML="";
+  S.games.forEach((x,i)=>{
+    let b=document.createElement("button");
+    b.textContent="R"+x.round;
+    if(i===S.cur)b.className="active";
+    b.onclick=()=>{S.cur=i;render()}
+    roundButtons.appendChild(b);
   });
 
-  document.getElementById("opponent").addEventListener("input", e=>{
-    const g = currentGame();
-    g.opponent = e.target.value;
-    saveState();
-    renderScores();
-    renderQuarterTable();
-    renderRoundSeg();
+  positions.innerHTML="";
+  POS.forEach(p=>{
+    let r=document.createElement("div");r.className="row";
+    let s=document.createElement("select");
+    s.innerHTML="<option></option>"+S.players.map(x=>`<option value="${x.id}">${x.n}</option>`).join("");
+    s.value=G.qs[G.editQ].a[p]??"";
+    s.onchange=()=>{G.qs[G.editQ].a[p]=s.value?Number(s.value):null;render()}
+    r.innerHTML=`<div class="pos">${p}</div>`;
+    r.appendChild(s);positions.appendChild(r)
   });
 
-  document.getElementById("roundName").addEventListener("input", e=>{
-    const g = currentGame();
-    g.roundName = e.target.value;
-    saveState();
-    renderRoundSeg();
-  });
+  gsName.textContent=G.qs[G.liveQ].a.GS!=null?S.players[G.qs[G.liveQ].a.GS].n:"—";
+  gaName.textContent=G.qs[G.liveQ].a.GA!=null?S.players[G.qs[G.liveQ].a.GA].n:"—";
 
-  document.getElementById("gameDate").addEventListener("input", e=>{
-    const g = currentGame();
-    g.gameDate = e.target.value;
-    saveState();
-    renderRoundSeg();
-  });
+  save();
+}
 
-  document.getElementById("notes").addEventListener("input", e=>{
-    const g = currentGame();
-    g.notes = e.target.value;
-    saveState();
-  });
-
-  document.getElementById("homePlus").addEventListener("click", ()=>scoreTeam("home", +1));
-  document.getElementById("homeMinus").addEventListener("click", ()=>scoreTeam("home", -1));
-  document.getElementById("awayPlus").addEventListener("click", ()=>scoreTeam("away", +1));
-  document.getElementById("awayMinus").addEventListener("click", ()=>scoreTeam("away", -1));
-  document.getElementById("undoBtn").addEventListener("click", undo);
-
-  document.getElementById("resetAllBtn").addEventListener("click", ()=>{
-    if(confirm("Reset EVERYTHING (season players, all games, all scores)?")) resetAll();
-  });
-
-  document.getElementById("newGameBtn").addEventListener("click", ()=>{
-    const g = currentGame();
-    if(confirm(`Reset only Round ${g.round}? (Keeps players and other rounds)`)) resetThisGame();
-  });
-
-  document.getElementById("addGameBtn").addEventListener("click", addGame);
-  document.getElementById("prevGameBtn").addEventListener("click", goPrevGame);
-  document.getElementById("nextGameBtn").addEventListener("click", goNextGame);
-
-  document.getElementById("copySummaryBtn").addEventListener("click", ()=>{
-    copyText(buildGameSummaryText(currentGame()));
-  });
-  document.getElementById("copySeasonBtn").addEventListener("click", ()=>{
-    copyText(buildSeasonSummaryText());
-  });
-  document.getElementById("copyRotationsBtn").addEventListener("click", ()=>{
-    copyText(buildRotationsText(currentGame()));
-  });
-
-  // quarter finished
-  document.getElementById("qtrFinishedBtn").addEventListener("click", finishQuarter);
-
-  // timer controls
-  document.getElementById("qtrMinutes").addEventListener("change", e=>{
-    const g = currentGame();
-    g.qtrMinutes = Number(e.target.value);
-
-    // if not running, set remaining to full length
-    if (!g.timerRunning) {
-      g.timerRemaining = g.qtrMinutes * 60;
-      g.timerLastTick = 0;
-    }
-    saveState();
-    renderTimer();
-  });
-  document.getElementById("timerStartBtn").addEventListener("click", toggleTimer);
-  document.getElementById("timerResetBtn").addEventListener("click", resetTimer);
-
-  /* ---------- PWA OFFLINE ---------- */
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(()=>{});
-    });
+/* TIMER */
+function tick(){
+  const G=g();
+  if(!G.run)return;
+  let d=Math.floor((Date.now()-G.last)/1000);
+  if(d>0){
+    G.remain=Math.max(0,G.remain-d);
+    G.last=Date.now();
+    if(G.remain===0){G.run=false;alert("Time!")}
+    render();
   }
+}
+startTimer.onclick=()=>{const G=g();G.run=!G.run;G.last=Date.now();timerInt||(timerInt=setInterval(tick,250));render()}
+resetTimer.onclick=()=>{const G=g();G.run=false;G.remain=G.mins*60;render()}
+minutes.onchange=e=>{const G=g();G.mins=+e.target.value;G.run=false;G.remain=G.mins*60;render()}
 
-  /* ---------- INIT ---------- */
-  renderAll();
+/* QUARTER */
+finishQ.onclick=()=>{const G=g();if(G.liveQ>=3)return alert("Already Q4");G.run=false;G.remain=G.mins*60;G.liveQ++;G.editQ=G.liveQ;render()}
+setLive.onclick=()=>{g().liveQ=g().editQ;render()}
+
+/* SCORING (LIVE) */
+homePlus.onclick=()=>{g().qs[g().liveQ].h++;render()}
+awayPlus.onclick=()=>{g().qs[g().liveQ].o++;render()}
+homeMinus.onclick=()=>{const Q=g().qs[g().liveQ];Q.h=Math.max(0,Q.h-1);render()}
+awayMinus.onclick=()=>{const Q=g().qs[g().liveQ];Q.o=Math.max(0,Q.o-1);render()}
+gsPlus.onclick=()=>{const G=g();const id=G.qs[G.liveQ].a.GS;if(id==null)return alert("Assign GS");G.qs[G.liveQ].h++;render()}
+gaPlus.onclick=()=>{const G=g();const id=G.qs[G.liveQ].a.GA;if(id==null)return alert("Assign GA");G.qs[G.liveQ].h++;render()}
+undo.onclick=()=>alert("Undo left simple")
+
+/* GAMES */
+addGame.onclick=()=>{S.games.push(newGame(S.games.length+1));S.cur=S.games.length-1;render()}
+prevGame.onclick=()=>{if(S.cur>0){S.cur--;render()}}
+nextGame.onclick=()=>{if(S.cur<S.games.length-1){S.cur++;render()}}
+
+/* INPUTS */
+teamName.oninput=e=>{S.team=e.target.value;render()}
+roundName.oninput=e=>{g().roundName=e.target.value;save()}
+roundDate.oninput=e=>{g().date=e.target.value;render()}
+opponent.oninput=e=>{g().opp=e.target.value;render()}
+
+render();
 </script>
 </body>
 </html>
