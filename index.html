@@ -1,127 +1,178 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#111111" />
+  <link rel="manifest" href="manifest.json">
   <title>Netball Rotations</title>
-
   <style>
-    :root{--pad:12px;--r:14px;--b:1px solid #ddd;}
-    body{margin:0;font-family:-apple-system,system-ui,Segoe UI,Roboto,Arial;background:#f6f6f6}
-    header{padding:var(--pad);background:#111;color:#fff}
-    header b{font-size:18px}
-    main{padding:var(--pad);display:grid;gap:var(--pad)}
-    .card{background:#fff;border:var(--b);border-radius:var(--r);padding:var(--pad)}
-    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-    .grow{flex:1}
-    .muted{color:#666;font-size:13px}
-    .seg{display:flex;gap:8px;flex-wrap:wrap}
-    .seg button{border:var(--b);background:#fff;padding:10px 12px;border-radius:999px;font-weight:800}
-    .seg button.active{background:#111;color:#fff;border-color:#111}
-    button.primary{background:#111;color:#fff;border:1px solid #111;border-radius:12px;padding:10px 12px;font-weight:900}
-    button.ghost{background:#fff;border:var(--b);border-radius:12px;padding:10px 12px;font-weight:900}
-    button.small{padding:8px 10px;border-radius:10px}
-    select,input[type="text"],input[type="date"]{border:var(--b);border-radius:12px;padding:10px 12px;font-size:16px;background:#fff}
-    textarea{width:100%;min-height:70px;border:var(--b);border-radius:12px;padding:10px 12px;font-size:16px;background:#fff}
-    .grid2{display:grid;grid-template-columns:1fr;gap:10px}
-    @media(min-width:780px){.grid2{grid-template-columns:1fr 1fr}}
-    .posRow{display:flex;gap:10px;align-items:center}
-    .posTag{width:54px;min-width:54px;text-align:center;padding:8px 0;border-radius:10px;background:#f0f0f0;border:var(--b);font-weight:950}
-    .scoreBig{font-size:40px;font-weight:950;line-height:1}
-    .right{text-align:right}
-    table{width:100%;border-collapse:collapse}
-    th,td{border:var(--b);padding:8px 10px;text-align:left}
-    th{background:#fafafa}
-    .kbd{font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:2px 6px;border-radius:8px;background:#eee;border:1px solid #ddd}
+    :root { --pad: 12px; --r: 14px; --b: 1px solid #ddd; }
+    body { margin:0; font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial; background:#f6f6f6; }
+    header { padding: var(--pad); background:#111; color:#fff; }
+    header h1 { margin:0; font-size:18px; }
+    header .sub { opacity:.85; font-size:13px; margin-top:4px; display:flex; gap:10px; flex-wrap:wrap; }
+    main { padding: var(--pad); display:grid; gap: var(--pad); }
+    .card { background:#fff; border: var(--b); border-radius: var(--r); padding: var(--pad); }
+    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .grow { flex:1; }
+    .seg { display:flex; gap:8px; flex-wrap:wrap; }
+    .seg button { border: var(--b); background:#fff; padding:10px 12px; border-radius: 999px; font-weight:700; }
+    .seg button.active{
+      background:#111;
+      color:#fff;
+      border-color:#111;
+      box-shadow: 0 0 0 4px rgba(0,0,0,0.12);
+      transform: scale(1.06);
+    }
+    button.primary { background:#111; color:#fff; border:1px solid #111; border-radius: 12px; padding:12px 14px; font-weight:800; }
+    button.ghost { background:#fff; border: var(--b); border-radius: 12px; padding:12px 14px; font-weight:800; }
+    button.small { padding:8px 10px; border-radius:10px; font-weight:800; }
+    button.danger { border-color:#c62828; color:#c62828; }
+    select, input[type="text"], input[type="date"] { border: var(--b); border-radius: 12px; padding:10px 12px; font-size:16px; background:#fff; }
+    textarea { width:100%; min-height:70px; border: var(--b); border-radius: 12px; padding:10px 12px; font-size:16px; background:#fff; }
+    .grid7 { display:grid; grid-template-columns: 1fr; gap:10px; }
+    @media (min-width: 780px) { .grid7 { grid-template-columns: 1fr 1fr; } }
+    .posRow { display:flex; gap:10px; align-items:center; }
+    .posTag { width:54px; min-width:54px; text-align:center; padding:8px 0; border-radius:10px; background:#f0f0f0; border: var(--b); font-weight:900; }
+    .score { font-size:24px; font-weight:950; letter-spacing:.5px; }
+    .muted { color:#666; font-size:13px; }
+    .list { display:grid; gap:8px; }
+    .pill { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border: var(--b); border-radius: 12px; background:#fff; }
+    .right { text-align:right; }
+    .kbd { font-family: ui-monospace, Menlo, monospace; font-size:12px; padding:2px 6px; border-radius:8px; background:#eee; border:1px solid #ddd; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { border: var(--b); padding:8px 10px; text-align:left; }
+    th { background:#fafafa; }
+    details summary { cursor:pointer; font-weight:900; }
+
+    /* Quarter colour themes (editing quarter) */
+    .q1 { border-left: 8px solid #1e88e5; }
+    .q2 { border-left: 8px solid #43a047; }
+    .q3 { border-left: 8px solid #fb8c00; }
+    .q4 { border-left: 8px solid #8e24aa; }
+    .q1 .quarterTint { color:#1e88e5; }
+    .q2 .quarterTint { color:#43a047; }
+    .q3 .quarterTint { color:#fb8c00; }
+    .q4 .quarterTint { color:#8e24aa; }
+
+    .warn { padding:10px 12px; border-radius:12px; border:1px solid #ffe082; background:#fff8e1; }
   </style>
 </head>
 
 <body>
 <header>
-  <b>Netball Rotations</b>
-  <span id="saveState" class="muted" style="margin-left:10px;"></span>
+  <h1>Netball Rotations</h1>
+  <div class="sub">
+    <span>Season mode • permanent players • add games by round • round name/date • +score buttons • live quarter warnings • timer</span>
+    <span id="saveState" class="muted"></span>
+  </div>
 </header>
 
 <main>
-
-  <!-- SEASON / GAME -->
-  <section class="card">
+  <!-- SEASON / GAME HEADER -->
+  <section class="card" id="seasonCard">
     <div class="row">
       <div class="grow">
         <div class="muted">Your Team (season)</div>
-        <input id="teamName" type="text" placeholder="e.g. Tigers"/>
+        <input id="teamName" type="text" placeholder="e.g. Tigers" />
       </div>
 
-      <div>
+      <div class="grow">
         <div class="muted">Current Game</div>
-        <div style="font-weight:950;font-size:18px">
-          <span id="roundLabel">Round 1</span>
-          <span class="muted" id="roundCountLabel"></span>
+        <div style="font-weight:950; font-size:18px;">
+          <span id="roundLabel">Round 1</span> <span class="muted" id="roundCountLabel"></span>
         </div>
       </div>
 
       <button class="ghost small" id="prevGameBtn">◀ Prev</button>
       <button class="ghost small" id="nextGameBtn">Next ▶</button>
       <button class="primary small" id="addGameBtn">+ Add Game</button>
+      <button class="ghost small danger" id="resetAllBtn" title="Reset everything (season)">Reset All</button>
     </div>
 
-    <div style="height:10px"></div>
-
-    <div class="row">
-      <div class="grow">
-        <div class="muted">Round name</div>
-        <input id="roundName" type="text" placeholder="e.g. vs Hawks (Home)"/>
-      </div>
-      <div>
-        <div class="muted">Date</div>
-        <input id="gameDate" type="date"/>
-      </div>
-      <div class="grow">
-        <div class="muted">Opponent</div>
-        <input id="opponent" type="text" placeholder="e.g. Raptors"/>
-      </div>
-    </div>
-
-    <div style="height:10px"></div>
-    <div class="row">
+    <!-- Rounds strip (tap to review any round) -->
+    <div class="row" style="margin-top:10px;">
       <div class="muted">Rounds:</div>
       <div class="seg" id="roundSeg"></div>
     </div>
-  </section>
 
-  <!-- PLAYERS (PERMANENT) -->
-  <section class="card">
+    <div style="height:10px"></div>
+
     <div class="row">
       <div class="grow">
-        <div style="font-weight:950">Players (permanent for season)</div>
-        <div class="muted">Edit once — used for all rounds</div>
+        <div class="muted">Round name (this game)</div>
+        <input id="roundName" type="text" placeholder="e.g. vs Hawks (Home) / Semi Final / etc" />
+      </div>
+
+      <div class="grow">
+        <div class="muted">Date (this game)</div>
+        <input id="gameDate" type="date" />
       </div>
     </div>
+
     <div style="height:10px"></div>
-    <div class="grid2" id="playersInputs"></div>
+
+    <div class="row">
+      <div class="grow">
+        <div class="muted">Opponent (this game)</div>
+        <input id="opponent" type="text" placeholder="e.g. Raptors" />
+      </div>
+
+      <div class="grow">
+        <div class="muted">Quick actions (this game)</div>
+        <div class="row">
+          <button class="ghost small" id="newGameBtn" title="Reset this game (keep players)">Reset This Game</button>
+          <button class="ghost small" id="copySummaryBtn">Copy Game Summary</button>
+          <button class="ghost small" id="copySeasonBtn">Copy Season Summary</button>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <!-- QUARTER / TIMER / LIVE SCORE -->
+  <!-- PLAYERS -->
+  <section class="card" id="setupCard">
+    <div class="row">
+      <div class="grow">
+        <div style="font-weight:950;margin-bottom:6px;">Players (permanent for season)</div>
+        <div class="muted">Edit names once. Stats update per game + across season.</div>
+      </div>
+    </div>
+
+    <div style="height:10px"></div>
+    <div class="row" id="playersInputs" style="display:grid; grid-template-columns: 1fr; gap:10px;"></div>
+  </section>
+
+  <!-- QUARTER / SCORE -->
   <section class="card" id="quarterCard">
     <div class="row">
-      <div class="grow" style="font-weight:950">Quarter (editing)</div>
+      <div class="grow" style="font-weight:950;">
+        Quarter <span class="quarterTint">(editing)</span>
+      </div>
       <div class="seg" id="quarterSeg"></div>
     </div>
 
-    <div class="muted" style="margin-top:6px">
-      Editing: <b id="editingQuarter">Q1</b> &nbsp;|&nbsp; Live: <b id="liveQuarterLabel">Q1</b>
+    <div class="muted" style="margin-top:8px;">
+      Currently editing: <b id="editingQuarter">Q1</b>
     </div>
 
-    <div class="row" style="margin-top:10px">
+    <div class="row" style="margin-top:10px;">
+      <div class="muted">Live quarter (scoring goes here):</div>
+      <div style="font-weight:950;">
+        <span id="liveQuarterLabel">Q1</span>
+      </div>
       <button class="ghost small" id="setLiveToEditingBtn">Set live = editing</button>
       <button class="primary small" id="qtrFinishedBtn">Qtr finished → Next</button>
     </div>
 
-    <div class="row" style="margin-top:10px">
+    <!-- TIMER -->
+    <div class="row" style="margin-top:10px;">
       <div class="muted">Timer:</div>
-      <div style="font-weight:950;font-size:20px"><span id="timerDisplay">10:00</span></div>
+      <div style="font-weight:950; font-size:18px;">
+        <span id="timerDisplay">10:00</span>
+      </div>
 
-      <select id="qtrMinutes" style="max-width:140px">
+      <select id="qtrMinutes" style="max-width:140px;">
         <option value="5">5 min</option>
         <option value="6">6 min</option>
         <option value="7">7 min</option>
@@ -135,67 +186,130 @@
       <button class="ghost small" id="timerResetBtn">Reset</button>
     </div>
 
-    <div style="height:14px"></div>
+    <div style="height:12px"></div>
 
     <!-- LIVE TOTAL SCORE ONLY -->
-    <div class="row" style="align-items:flex-end">
+    <div class="row" style="align-items:flex-end; justify-content:space-between; margin-top:8px;">
       <div>
-        <div class="scoreBig" id="homeScore">0</div>
-        <div class="muted" id="homeTeamLabel">Home</div>
+        <div class="score" style="font-size:40px;font-weight:950;line-height:1;" id="homeScore">0</div>
+        <div class="muted" id="homeLabel">Home</div>
       </div>
 
-      <button class="primary" id="homePlus">+Home</button>
+      <div class="right">
+        <div class="score" style="font-size:40px;font-weight:950;line-height:1;" id="awayScore">0</div>
+        <div class="muted" id="awayLabel">Away</div>
+      </div>
+    </div>
+
+    <div style="height:10px"></div>
+
+    <div class="row">
+      <button class="primary" id="homePlus">Home +1</button>
+
       <button class="primary" id="gsPlus">+GS (<span id="gsName">—</span>)</button>
       <button class="primary" id="gaPlus">+GA (<span id="gaName">—</span>)</button>
-      <button class="ghost" id="homeMinus">−</button>
+
+      <button class="ghost" id="homeMinus">Home −1</button>
 
       <div class="grow"></div>
 
-      <div class="right">
-        <div class="scoreBig" id="awayScore">0</div>
-        <div class="muted" id="awayTeamLabel">Opponent</div>
-      </div>
-
-      <button class="primary" id="awayPlus">+Away</button>
-      <button class="ghost" id="awayMinus">−</button>
-      <button class="ghost" id="undoBtn">Undo</button>
+      <button class="primary" id="awayPlus">Away +1</button>
+      <button class="ghost" id="awayMinus">Away −1</button>
+      <button class="ghost" id="undoBtn" title="Undo last event (Live quarter)">Undo</button>
     </div>
+
+    <div style="height:10px"></div>
+    <div class="muted">
+      +GS/+GA credits the player currently assigned to GS/GA in the <b>LIVE quarter</b>.
+    </div>
+
+    <div style="height:10px"></div>
+    <div class="warn muted" id="liveWarnBox" style="display:none;"></div>
   </section>
 
   <!-- POSITIONS -->
   <section class="card">
     <div class="row">
-      <div class="grow" style="font-weight:950">Positions (editing quarter)</div>
-      <div class="muted">Scorer names use LIVE quarter</div>
+      <div class="grow" style="font-weight:950;">Positions (On Court)</div>
+      <div class="muted">Bench auto-updates (editing quarter)</div>
     </div>
 
     <div style="height:10px"></div>
-    <div class="grid2" id="positionsGrid"></div>
+
+    <div class="row" style="margin-bottom:10px;">
+      <div class="muted">Copy positions from this quarter to:</div>
+      <select id="copyTargetQuarter" style="max-width:140px;"></select>
+      <button class="ghost small" id="copyPositionsBtn">Copy</button>
+      <button class="ghost small" id="copyToNextBtn">Copy to next</button>
+    </div>
+
+    <div class="grid7" id="positionsGrid"></div>
+
+    <div style="height:12px"></div>
+
+    <div class="row">
+      <div class="grow" style="font-weight:950;">Bench (this quarter)</div>
+      <div class="muted" id="benchCount"></div>
+    </div>
+    <div class="list" id="benchList"></div>
   </section>
 
-  <!-- SUMMARY -->
+  <!-- STATS -->
   <section class="card">
     <div class="row">
-      <div class="grow" style="font-weight:950">Summary (this game)</div>
-      <div class="muted">Quarter scores + total</div>
+      <div class="grow" style="font-weight:950;">Stats</div>
+      <div class="muted">Shows this game + season totals</div>
+    </div>
+    <div style="height:12px"></div>
+    <div class="list" id="statsList"></div>
+
+    <div style="height:12px"></div>
+    <details>
+      <summary>Goal Log (LIVE quarter)</summary>
+      <div style="height:10px"></div>
+      <div class="list" id="goalLog"></div>
+    </details>
+  </section>
+
+  <!-- QUARTER SUMMARY -->
+  <section class="card">
+    <div class="row">
+      <div class="grow" style="font-weight:950;">Quarter Summary (this game)</div>
+      <button class="ghost small" id="copyRotationsBtn">Copy Rotations (Q1–Q4)</button>
     </div>
     <div style="height:10px"></div>
     <div id="quarterTableWrap"></div>
-    <div style="height:10px"></div>
-    <div class="muted">Notes</div>
-    <textarea id="notes" placeholder="Notes for this game..."></textarea>
+
+    <div style="height:12px"></div>
+    <details>
+      <summary>All Quarters Positions</summary>
+      <div style="height:10px"></div>
+      <div id="allQuartersPositions"></div>
+    </details>
   </section>
 
+  <!-- NOTES -->
+  <section class="card">
+    <div class="row">
+      <div class="grow" style="font-weight:950;">Notes (this game)</div>
+      <div class="muted">Saved automatically</div>
+    </div>
+    <div style="height:10px"></div>
+    <textarea id="notes" placeholder="e.g. Injuries, umpire notes, rotation ideas…"></textarea>
+  </section>
 </main>
 
 <script>
   const POSITIONS = ["GS","GA","WA","C","WD","GD","GK"];
-  const STORAGE_KEY = "netball_full_fixed_v1";
+  const STORAGE_KEY = "netball_season_v3_timer_qtrfinished";
 
-  let timerInterval = null;
-
-  function initPlayers(){
-    return Array.from({length:10}, (_,i)=>({ id: crypto.randomUUID(), name: `Player ${i+1}` }));
+  /* ---------- DATA ---------- */
+  function initPlayerStats(players){
+    const stats = {};
+    for(const p of players){
+      stats[p.id] = { goalsTotal: 0, goalsByQ: [0,0,0,0] };
+    }
+    return stats;
   }
 
   function newEmptyGame(roundNumber, players){
@@ -211,20 +325,24 @@
       // timer
       qtrMinutes: 10,
       timerRunning: false,
-      timerRemaining: 10*60,
+      timerRemaining: 10 * 60,
       timerLastTick: 0,
 
       quarters: Array.from({length:4}, ()=>({
         assignments: {},
         homeScore: 0,
         awayScore: 0,
-        events: [] // {type, payload, t}
-      }))
+        events: []
+      })),
+      playerStats: initPlayerStats(players)
     };
   }
 
   function defaultState(){
-    const players = initPlayers();
+    const players = Array.from({length:10}, (_,i)=>({
+      id: crypto.randomUUID(),
+      name: `Player ${i+1}`
+    }));
     return {
       teamName: "",
       players,
@@ -233,34 +351,39 @@
     };
   }
 
-  function loadState(){
-    try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    }catch{ return null; }
-  }
-
   let state = loadState() || defaultState();
   ensureIntegrity();
 
   function ensureIntegrity(){
-    if(!state.players || state.players.length !== 10) state.players = initPlayers();
-    if(!state.games || state.games.length === 0) state.games = [newEmptyGame(1, state.players)];
+    if(!state.players || state.players.length !== 10){
+      state.players = state.players && state.players.length
+        ? state.players
+        : Array.from({length:10}, (_,i)=>({id:crypto.randomUUID(), name:`Player ${i+1}`}));
+    }
+    if(!state.games || state.games.length === 0){
+      state.games = [newEmptyGame(1, state.players)];
+      state.currentGameIndex = 0;
+    }
     if(state.currentGameIndex == null) state.currentGameIndex = 0;
     if(state.currentGameIndex < 0) state.currentGameIndex = 0;
     if(state.currentGameIndex >= state.games.length) state.currentGameIndex = state.games.length - 1;
 
     for(const g of state.games){
+      if(g.roundName == null) g.roundName = "";
+      if(g.gameDate == null) g.gameDate = "";
       if(g.selectedQ == null) g.selectedQ = 0;
-      if(g.liveQ == null) g.liveQ = 0;
+      if(g.liveQ == null) g.liveQ = g.selectedQ || 0;
 
       if(g.qtrMinutes == null) g.qtrMinutes = 10;
       if(g.timerRunning == null) g.timerRunning = false;
       if(g.timerRemaining == null) g.timerRemaining = g.qtrMinutes * 60;
       if(g.timerLastTick == null) g.timerLastTick = 0;
 
-      if(!g.quarters || g.quarters.length !== 4){
-        g.quarters = Array.from({length:4}, ()=>({assignments:{},homeScore:0,awayScore:0,events:[]}));
+      if(!g.playerStats) g.playerStats = {};
+      for(const p of state.players){
+        if(!g.playerStats[p.id]){
+          g.playerStats[p.id] = { goalsTotal:0, goalsByQ:[0,0,0,0] };
+        }
       }
     }
   }
@@ -269,38 +392,101 @@
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     const el = document.getElementById("saveState");
     el.textContent = "Saved ✓";
-    setTimeout(()=> el.textContent = "", 700);
+    setTimeout(()=> el.textContent = "", 800);
+  }
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
+  function resetAll(){
+    stopTimerLoop();
+    state = defaultState();
+    saveState();
+    renderAll();
   }
 
   function currentGame(){ return state.games[state.currentGameIndex]; }
 
+  /* ---------- HELPERS ---------- */
+  function escapeHtml(str){
+    return (str || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+  function playerById(id){ return state.players.find(p=>p.id===id); }
+  function playerName(id){ const p=playerById(id); return p? p.name : "—"; }
   function clamp0(n){ return Math.max(0, n); }
+
+  function assignedIdsForQ(game, q){
+    const a = game.quarters[q].assignments;
+    return new Set(Object.values(a).filter(Boolean));
+  }
+  function benchPlayersForQ(game, q){
+    const assigned = assignedIdsForQ(game, q);
+    return state.players.filter(p=>!assigned.has(p.id));
+  }
+  function totalHome(game){ return game.quarters.reduce((s,q)=>s+q.homeScore,0); }
+  function totalAway(game){ return game.quarters.reduce((s,q)=>s+q.awayScore,0); }
+  function quartersOnCourt(game, playerId){
+    let count = 0;
+    for(let q=0;q<4;q++){
+      const assigned = assignedIdsForQ(game, q);
+      if(assigned.has(playerId)) count++;
+    }
+    return count;
+  }
+
+  function seasonGoalsForPlayer(playerId){
+    return state.games.reduce((sum,g)=> sum + (g.playerStats[playerId]?.goalsTotal || 0), 0);
+  }
+  function seasonCourtForPlayer(playerId){
+    return state.games.reduce((sum,g)=> sum + quartersOnCourt(g, playerId), 0);
+  }
+
+  function formatShortDate(iso){
+    if(!iso) return "";
+    const [y,m,d] = iso.split("-");
+    if(!y || !m || !d) return iso;
+    return `${d}/${m}`;
+  }
+
+  /* ---------- LIVE QUARTER WARNING ---------- */
+  function renderAllQuarterWarn(){
+    const g = currentGame();
+    const warnBox = document.getElementById("liveWarnBox");
+    if(g.selectedQ !== g.liveQ){
+      warnBox.style.display = "block";
+      warnBox.textContent =
+        `Heads up: you're editing Q${g.selectedQ+1}, but LIVE scoring is Q${g.liveQ+1}. ` +
+        `Scoring/undo applies to LIVE quarter.`;
+    } else {
+      warnBox.style.display = "none";
+      warnBox.textContent = "";
+    }
+  }
+
+  /* ---------- TIMER ---------- */
+  let timerInterval = null;
 
   function fmtTime(sec){
     sec = Math.max(0, Math.floor(sec));
-    const m = String(Math.floor(sec/60)).padStart(2,"0");
-    const s = String(sec%60).padStart(2,"0");
+    const m = String(Math.floor(sec / 60)).padStart(2,"0");
+    const s = String(sec % 60).padStart(2,"0");
     return `${m}:${s}`;
   }
 
-  function totalHome(g){ return g.quarters.reduce((s,q)=>s+q.homeScore,0); }
-  function totalAway(g){ return g.quarters.reduce((s,q)=>s+q.awayScore,0); }
-
-  function playerNameById(id){
-    const p = state.players.find(x=>x.id===id);
-    return p ? p.name : "—";
-  }
-
-  /* -------- TIMER -------- */
   function renderTimer(){
     const g = currentGame();
-    document.getElementById("timerDisplay").textContent = fmtTime(g.timerRemaining);
-    document.getElementById("timerStartBtn").textContent = g.timerRunning ? "Pause" : "Start";
-    document.getElementById("qtrMinutes").value = String(g.qtrMinutes);
-  }
+    const display = document.getElementById("timerDisplay");
+    const btn = document.getElementById("timerStartBtn");
+    const minsSel = document.getElementById("qtrMinutes");
+    if(!display || !btn || !minsSel) return;
 
-  function stopTimerLoop(){
-    if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+    display.textContent = fmtTime(g.timerRemaining);
+    btn.textContent = g.timerRunning ? "Pause" : "Start";
+    minsSel.value = String(g.qtrMinutes);
   }
 
   function tickTimer(){
@@ -310,7 +496,7 @@
     const now = Date.now();
     if(!g.timerLastTick) g.timerLastTick = now;
 
-    const delta = Math.floor((now - g.timerLastTick)/1000);
+    const delta = Math.floor((now - g.timerLastTick) / 1000);
     if(delta <= 0) return;
 
     g.timerRemaining = Math.max(0, g.timerRemaining - delta);
@@ -330,18 +516,27 @@
   }
 
   function startTimerLoop(){
-    if(!timerInterval) timerInterval = setInterval(tickTimer, 250);
+    if(timerInterval) return;
+    timerInterval = setInterval(tickTimer, 250);
+  }
+
+  function stopTimerLoop(){
+    if(!timerInterval) return;
+    clearInterval(timerInterval);
+    timerInterval = null;
   }
 
   function toggleTimer(){
     const g = currentGame();
+
     if(g.timerRunning){
       g.timerRunning = false;
-      stopTimerLoop();
       saveState();
+      stopTimerLoop();
       renderTimer();
       return;
     }
+
     g.timerRunning = true;
     g.timerLastTick = Date.now();
     saveState();
@@ -354,69 +549,276 @@
     g.timerRunning = false;
     g.timerRemaining = g.qtrMinutes * 60;
     g.timerLastTick = 0;
-    stopTimerLoop();
     saveState();
+    stopTimerLoop();
     renderTimer();
   }
 
-  /* -------- SCORER BUTTON NAMES (LIVE QTR) -------- */
+  /* ---------- QUARTER FINISHED ---------- */
+  function finishQuarter(){
+    const g = currentGame();
+
+    if (g.liveQ >= 3) {
+      alert("You’re already on Q4 (last quarter).");
+      return;
+    }
+
+    resetTimer();
+    g.liveQ += 1;
+    g.selectedQ = g.liveQ;
+
+    saveState();
+    renderAll();
+  }
+
+  /* ---------- SCORER BUTTON LABELS (LIVE QTR) ---------- */
   function updateScorerButtons(){
     const g = currentGame();
     const q = g.liveQ;
+
     const gsId = g.quarters[q].assignments["GS"];
     const gaId = g.quarters[q].assignments["GA"];
-    document.getElementById("gsName").textContent = gsId ? playerNameById(gsId) : "—";
-    document.getElementById("gaName").textContent = gaId ? playerNameById(gaId) : "—";
+
+    const gsEl = document.getElementById("gsName");
+    const gaEl = document.getElementById("gaName");
+
+    if(gsEl) gsEl.textContent = gsId ? playerName(gsId) : "—";
+    if(gaEl) gaEl.textContent = gaId ? playerName(gaId) : "—";
   }
 
-  /* -------- RENDERS -------- */
+  /* ---------- SCORING + EVENTS ---------- */
+  function pushEvent(game, q, type, payload){
+    game.quarters[q].events.push({ type, q, payload, t: Date.now() });
+    saveState();
+  }
+
+  function scoreTeam(which, delta){
+    const g = currentGame();
+    const q = g.liveQ;
+
+    if(which==="home"){
+      g.quarters[q].homeScore = clamp0(g.quarters[q].homeScore + delta);
+    } else {
+      g.quarters[q].awayScore = clamp0(g.quarters[q].awayScore + delta);
+    }
+
+    pushEvent(g, q, "score", { which, delta });
+    renderScores();
+    renderQuarterTable();
+    renderGoalLog();
+    renderRoundSeg();
+    renderAllQuarterWarn();
+  }
+
+  function scoreFromPosition(pos){
+    if(pos!=="GS" && pos!=="GA") return;
+
+    const g = currentGame();
+    const q = g.liveQ;
+
+    const pid = g.quarters[q].assignments[pos];
+    if(!pid) return alert(`Assign a player to ${pos} in LIVE quarter (Q${q+1}) first.`);
+
+    g.quarters[q].homeScore += 1;
+
+    const st = g.playerStats[pid] || (g.playerStats[pid] = { goalsTotal:0, goalsByQ:[0,0,0,0] });
+    st.goalsTotal += 1;
+    st.goalsByQ[q] += 1;
+
+    pushEvent(g, q, "playerGoal", { pid, pos });
+    renderScores();
+    renderStats();
+    renderGoalLog();
+    renderQuarterTable();
+    renderRoundSeg();
+    renderAllQuarterWarn();
+  }
+
+  function undo(){
+    const g = currentGame();
+    const q = g.liveQ;
+
+    const events = g.quarters[q].events;
+    const last = events.pop();
+    if(!last) return;
+
+    if(last.type==="score"){
+      const {which, delta} = last.payload;
+      if(which==="home") g.quarters[q].homeScore = clamp0(g.quarters[q].homeScore - delta);
+      else g.quarters[q].awayScore = clamp0(g.quarters[q].awayScore - delta);
+    }
+
+    if(last.type==="playerGoal"){
+      const {pid} = last.payload;
+      g.quarters[q].homeScore = clamp0(g.quarters[q].homeScore - 1);
+      const st = g.playerStats[pid];
+      if(st){
+        st.goalsTotal = clamp0(st.goalsTotal - 1);
+        st.goalsByQ[q] = clamp0(st.goalsByQ[q] - 1);
+      }
+    }
+
+    saveState();
+    renderScores();
+    renderStats();
+    renderGoalLog();
+    renderQuarterTable();
+    renderRoundSeg();
+    renderAllQuarterWarn();
+  }
+
+  /* ---------- ASSIGNMENTS (EDITING QUARTER) ---------- */
+  function setAssignment(pos, pid){
+    const g = currentGame();
+    const q = g.selectedQ;
+
+    if(pid){
+      for(const p of POSITIONS){
+        if(p !== pos && g.quarters[q].assignments[p] === pid){
+          g.quarters[q].assignments[p] = null;
+        }
+      }
+    }
+
+    g.quarters[q].assignments[pos] = pid || null;
+    pushEvent(g, q, "assign", { pos, pid: pid || null });
+    renderPositions();
+    renderBench();
+    renderStats();
+    renderQuarterPositionsAll();
+    updateScorerButtons();
+  }
+
+  /* ---------- COPY POSITIONS ---------- */
+  function populateCopyTargets(){
+    const g = currentGame();
+    const sel = document.getElementById("copyTargetQuarter");
+    if (!sel) return;
+
+    sel.innerHTML = "";
+    for (let i = 0; i < 4; i++) {
+      if (i === g.selectedQ) continue;
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = `Q${i+1}`;
+      sel.appendChild(opt);
+    }
+  }
+
+  function copyAssignments(fromQ, toQ){
+    const g = currentGame();
+    g.quarters[toQ].assignments = JSON.parse(JSON.stringify(g.quarters[fromQ].assignments || {}));
+    saveState();
+  }
+
+  /* ---------- GAME MANAGEMENT ---------- */
+  function addGame(){
+    const nextRound = state.games.length + 1;
+    const g = newEmptyGame(nextRound, state.players);
+    state.games.push(g);
+    state.currentGameIndex = state.games.length - 1;
+
+    stopTimerLoop();
+    saveState();
+    renderAll();
+  }
+
+  function goPrevGame(){
+    if(state.currentGameIndex <= 0) return;
+    stopTimerLoop();
+    state.currentGameIndex -= 1;
+    saveState();
+    renderAll();
+  }
+
+  function goNextGame(){
+    if(state.currentGameIndex >= state.games.length - 1) return;
+    stopTimerLoop();
+    state.currentGameIndex += 1;
+    saveState();
+    renderAll();
+  }
+
+  function resetThisGame(){
+    stopTimerLoop();
+    const idx = state.currentGameIndex;
+    const round = state.games[idx].round;
+    state.games[idx] = newEmptyGame(round, state.players);
+    saveState();
+    renderAll();
+  }
+
+  /* ---------- RENDER ---------- */
   function renderSeasonHeader(){
     const g = currentGame();
-    document.getElementById("teamName").value = state.teamName || "";
     document.getElementById("roundLabel").textContent = `Round ${g.round}`;
-    document.getElementById("roundCountLabel").textContent = `(${state.games.length} game${state.games.length===1?"":"s"})`;
+    document.getElementById("roundCountLabel").textContent = `(${state.games.length} game${state.games.length===1?'':'s'} in season)`;
+    document.getElementById("opponent").value = g.opponent || "";
     document.getElementById("roundName").value = g.roundName || "";
     document.getElementById("gameDate").value = g.gameDate || "";
-    document.getElementById("opponent").value = g.opponent || "";
     document.getElementById("notes").value = g.notes || "";
+    document.getElementById("teamName").value = state.teamName || "";
 
-    document.getElementById("prevGameBtn").disabled = state.currentGameIndex <= 0;
-    document.getElementById("nextGameBtn").disabled = state.currentGameIndex >= state.games.length - 1;
+    document.getElementById("prevGameBtn").disabled = (state.currentGameIndex <= 0);
+    document.getElementById("nextGameBtn").disabled = (state.currentGameIndex >= state.games.length - 1);
   }
 
   function renderRoundSeg(){
     const seg = document.getElementById("roundSeg");
+    if(!seg) return;
+
     seg.innerHTML = "";
-    state.games.forEach((gm, idx)=>{
+    for(let i=0; i<state.games.length; i++){
+      const g = state.games[i];
       const b = document.createElement("button");
-      b.textContent = `R${gm.round}`;
-      b.className = idx===state.currentGameIndex ? "active" : "";
-      b.onclick = ()=>{
+
+      const d = formatShortDate(g.gameDate);
+      const opp = (g.opponent || "").trim();
+      const name = (g.roundName || "").trim();
+      const nameShort = name.length > 10 ? (name.slice(0,10) + "…") : name;
+
+      const parts = [`R${g.round}`];
+      if(d) parts.push(d);
+      if(opp) parts.push(opp);
+      if(nameShort) parts.push(nameShort);
+
+      b.textContent = parts.join(" • ");
+      b.className = (i === state.currentGameIndex) ? "active" : "";
+      b.addEventListener("click", ()=>{
         stopTimerLoop();
-        state.currentGameIndex = idx;
+        state.currentGameIndex = i;
         saveState();
         renderAll();
-      };
+      });
       seg.appendChild(b);
-    });
+    }
   }
 
   function renderPlayersInputs(){
     const wrap = document.getElementById("playersInputs");
     wrap.innerHTML = "";
-    state.players.forEach((p, i)=>{
+    wrap.style.gridTemplateColumns = (window.innerWidth >= 780) ? "1fr 1fr" : "1fr";
+
+    state.players.forEach((p, idx)=>{
       const div = document.createElement("div");
+      div.className = "row";
       div.innerHTML = `
-        <div class="muted">Player ${i+1}</div>
-        <input type="text" value="${(p.name||"").replace(/"/g,"&quot;")}"/>
+        <div class="grow">
+          <div class="muted">Player ${idx+1}</div>
+          <input type="text" value="${escapeHtml(p.name)}" data-pid="${p.id}" />
+        </div>
       `;
-      const inp = div.querySelector("input");
-      inp.oninput = (e)=>{
+      const input = div.querySelector("input");
+      input.addEventListener("input", (e)=>{
         p.name = e.target.value;
         saveState();
         renderPositions();
+        renderBench();
+        renderStats();
+        renderQuarterPositionsAll();
+        renderRoundSeg();
         updateScorerButtons();
-      };
+      });
       wrap.appendChild(div);
     });
   }
@@ -425,40 +827,60 @@
     const g = currentGame();
     const seg = document.getElementById("quarterSeg");
     seg.innerHTML = "";
-
     for(let i=0;i<4;i++){
       const b = document.createElement("button");
       b.textContent = `Q${i+1}`;
-      b.className = g.selectedQ===i ? "active" : "";
-      b.onclick = ()=>{
+      b.className = (g.selectedQ===i) ? "active" : "";
+      b.addEventListener("click", ()=>{
         g.selectedQ = i;
-        resetTimer(); // reset on quarter switch (no auto-start)
+        resetTimer();
         saveState();
         renderAll();
-      };
+      });
       seg.appendChild(b);
     }
 
-    document.getElementById("editingQuarter").textContent = `Q${g.selectedQ+1}`;
-    document.getElementById("liveQuarterLabel").textContent = `Q${g.liveQ+1}`;
+    document.getElementById("editingQuarter").textContent = `Q${g.selectedQ + 1}`;
+    document.getElementById("liveQuarterLabel").textContent = `Q${g.liveQ + 1}`;
+
+    document.getElementById("setLiveToEditingBtn").onclick = () => {
+      g.liveQ = g.selectedQ;
+      saveState();
+      renderScores();
+      renderGoalLog();
+      renderQuarterTable();
+      renderAllQuarterWarn();
+      updateScorerButtons();
+    };
+
+    const qc = document.getElementById("quarterCard");
+    qc.classList.remove("q1","q2","q3","q4");
+    qc.classList.add(`q${g.selectedQ + 1}`);
+
+    renderAllQuarterWarn();
   }
 
-  function renderLiveScoreOnly(){
+  function renderScores(){
     const g = currentGame();
-    const team = (state.teamName||"").trim() || "Home";
-    const opp  = (g.opponent||"").trim() || "Opponent";
 
+    const team = state.teamName?.trim() ? state.teamName.trim() : "Home";
+    const opp  = g.opponent?.trim() ? g.opponent.trim() : "Away";
+
+    document.getElementById("homeLabel").textContent = team;
+    document.getElementById("awayLabel").textContent = opp;
+
+    // LIVE TOTAL SCORE ONLY
     document.getElementById("homeScore").textContent = totalHome(g);
     document.getElementById("awayScore").textContent = totalAway(g);
-    document.getElementById("homeTeamLabel").textContent = team;
-    document.getElementById("awayTeamLabel").textContent = opp;
+
+    document.getElementById("liveQuarterLabel").textContent = `Q${g.liveQ + 1}`;
   }
 
   function renderPositions(){
     const g = currentGame();
-    const q = g.selectedQ;
     const grid = document.getElementById("positionsGrid");
     grid.innerHTML = "";
+    const q = g.selectedQ;
 
     POSITIONS.forEach(pos=>{
       const row = document.createElement("div");
@@ -470,50 +892,128 @@
 
       const sel = document.createElement("select");
       sel.style.flex = "1";
-      sel.innerHTML = `<option value="">— select player —</option>` + state.players.map(p=>(
-        `<option value="${p.id}">${(p.name||"").replace(/</g,"&lt;")}</option>`
-      )).join("");
+
+      const opt0 = document.createElement("option");
+      opt0.value = "";
+      opt0.textContent = "— select player —";
+      sel.appendChild(opt0);
+
+      state.players.forEach(p=>{
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = `${p.name}`;
+        sel.appendChild(opt);
+      });
 
       sel.value = g.quarters[q].assignments[pos] || "";
-      sel.onchange = ()=>{
-        // stop duplicates in same quarter
-        const pid = sel.value || null;
-        if(pid){
-          for(const p of POSITIONS){
-            if(p !== pos && g.quarters[q].assignments[p] === pid){
-              g.quarters[q].assignments[p] = null;
-            }
-          }
-        }
-        g.quarters[q].assignments[pos] = pid;
-        saveState();
-        renderPositions();
-        updateScorerButtons();
-      };
+      sel.addEventListener("change", ()=>{
+        setAssignment(pos, sel.value || null);
+      });
 
       row.appendChild(tag);
       row.appendChild(sel);
+
+      // removed +1 buttons beside GS/GA (now next to Home +1)
+
       grid.appendChild(row);
     });
   }
 
-  function renderQuarterSummary(){
+  function renderBench(){
     const g = currentGame();
-    const team = (state.teamName||"").trim() || "Home";
-    const opp  = (g.opponent||"").trim() || "Opponent";
+    const list = document.getElementById("benchList");
+    list.innerHTML = "";
+    const bench = benchPlayersForQ(g, g.selectedQ);
+    document.getElementById("benchCount").textContent = `${bench.length} on bench`;
 
-    const rows = g.quarters.map((q,i)=>`
+    bench.forEach(p=>{
+      const item = document.createElement("div");
+      item.className = "pill";
+      const gs = g.playerStats[p.id]?.goalsTotal || 0;
+      const ss = seasonGoalsForPlayer(p.id);
+      item.innerHTML = `<div>${escapeHtml(p.name)}</div><div class="muted">Game goals: ${gs} • Season: ${ss}</div>`;
+      list.appendChild(item);
+    });
+  }
+
+  function renderStats(){
+    const g = currentGame();
+    const list = document.getElementById("statsList");
+    list.innerHTML = "";
+
+    const sorted = [...state.players].sort((a,b)=>{
+      const ga = g.playerStats[a.id]?.goalsTotal || 0;
+      const gb = g.playerStats[b.id]?.goalsTotal || 0;
+      if(gb !== ga) return gb - ga;
+      return a.name.localeCompare(b.name);
+    });
+
+    sorted.forEach(p=>{
+      const gameGoals = g.playerStats[p.id]?.goalsTotal || 0;
+      const seasonGoals = seasonGoalsForPlayer(p.id);
+      const gameCourt = quartersOnCourt(g, p.id);
+      const seasonCourt = seasonCourtForPlayer(p.id);
+
+      const item = document.createElement("div");
+      item.className = "pill";
+      item.innerHTML = `
+        <div>
+          <div style="font-weight:900">${escapeHtml(p.name)}</div>
+          <div class="muted">On court: Game ${gameCourt}/4 • Season ${seasonCourt}/${state.games.length*4}</div>
+        </div>
+        <div class="right">
+          <div><b>${gameGoals}</b> game goals</div>
+          <div class="muted"><b>${seasonGoals}</b> season goals</div>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  function renderGoalLog(){
+    const g = currentGame();
+    const log = document.getElementById("goalLog");
+    log.innerHTML = "";
+    const q = g.liveQ;
+    const events = g.quarters[q].events.filter(e=>e.type==="playerGoal");
+    if(events.length===0){
+      log.innerHTML = `<div class="muted">No credited goals in LIVE quarter (Q${q+1}) yet.</div>`;
+      return;
+    }
+
+    [...events].reverse().forEach(e=>{
+      const dt = new Date(e.t);
+      const time = dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      const p = playerById(e.payload.pid);
+      const item = document.createElement("div");
+      item.className = "pill";
+      item.innerHTML = `<div>${escapeHtml(p ? p.name : "Unknown")} <span class="muted">(${e.payload.pos})</span></div><div class="muted">${time}</div>`;
+      log.appendChild(item);
+    });
+  }
+
+  function renderQuarterTable(){
+    const g = currentGame();
+    const wrap = document.getElementById("quarterTableWrap");
+    const team = state.teamName?.trim() || "Home";
+    const opp = g.opponent?.trim() || "Away";
+
+    const rows = g.quarters.map((q, i)=>`
       <tr>
-        <td><b>Q${i+1}</b>${i===g.liveQ ? ' <span class="kbd">LIVE</span>' : ''}</td>
+        <td><b>Q${i+1}</b>${(i===g.liveQ) ? ' <span class="kbd">LIVE</span>' : ''}</td>
         <td>${q.homeScore}</td>
         <td>${q.awayScore}</td>
       </tr>
     `).join("");
 
-    document.getElementById("quarterTableWrap").innerHTML = `
+    wrap.innerHTML = `
       <table>
         <thead>
-          <tr><th>Quarter</th><th>${team}</th><th>${opp}</th></tr>
+          <tr>
+            <th>Quarter</th>
+            <th>${escapeHtml(team)}</th>
+            <th>${escapeHtml(opp)}</th>
+          </tr>
         </thead>
         <tbody>
           ${rows}
@@ -527,135 +1027,256 @@
     `;
   }
 
+  function renderQuarterPositionsAll(){
+    const g = currentGame();
+    const wrap = document.getElementById("allQuartersPositions");
+    wrap.innerHTML = "";
+
+    for(let q=0;q<4;q++){
+      const a = g.quarters[q].assignments;
+      const line = POSITIONS.map(p=>{
+        const pid = a[p];
+        return `<span class="kbd">${p}</span> ${escapeHtml(pid ? playerName(pid) : "—")}`;
+      }).join(" &nbsp; ");
+
+      const section = document.createElement("div");
+      section.className = "pill";
+      section.style.display = "block";
+      section.innerHTML = `<div style="font-weight:900;margin-bottom:6px;">Q${q+1}${q===g.liveQ ? ' <span class="kbd">LIVE</span>' : ''}</div><div>${line}</div>`;
+      wrap.appendChild(section);
+    }
+  }
+
+  function wireCopyButtons(){
+    const g = currentGame();
+
+    const copyBtn = document.getElementById("copyPositionsBtn");
+    if (copyBtn) {
+      copyBtn.onclick = () => {
+        const target = Number(document.getElementById("copyTargetQuarter").value);
+        const ok = confirm(`Copy positions from Q${g.selectedQ+1} to Q${target+1}?\nThis will overwrite Q${target+1} positions.`);
+        if (!ok) return;
+        copyAssignments(g.selectedQ, target);
+        renderQuarterPositionsAll();
+        renderBench();
+        renderStats();
+        updateScorerButtons();
+        alert(`Copied Q${g.selectedQ+1} positions to Q${target+1}.`);
+      };
+    }
+
+    const nextBtn = document.getElementById("copyToNextBtn");
+    if (nextBtn) {
+      nextBtn.onclick = () => {
+        const target = Math.min(3, g.selectedQ + 1);
+        if (target === g.selectedQ) return alert("Already at Q4.");
+        const ok = confirm(`Copy positions from Q${g.selectedQ+1} to Q${target+1}?\nThis will overwrite Q${target+1} positions.`);
+        if (!ok) return;
+        copyAssignments(g.selectedQ, target);
+        renderQuarterPositionsAll();
+        renderBench();
+        renderStats();
+        updateScorerButtons();
+        alert(`Copied Q${g.selectedQ+1} positions to Q${target+1}.`);
+      };
+    }
+  }
+
+  /* ---------- COPY TEXT ---------- */
+  async function copyText(text){
+    try{
+      await navigator.clipboard.writeText(text);
+      alert("Copied to clipboard.");
+    } catch {
+      alert("Copy failed (iPad Safari can block clipboard sometimes).");
+    }
+  }
+
+  function buildRotationsText(game){
+    const lines = [];
+    for(let q=0;q<4;q++){
+      const a = game.quarters[q].assignments;
+      const posText = POSITIONS.map(p=>`${p}: ${a[p] ? playerName(a[p]) : "—"}`).join(" | ");
+      lines.push(`Q${q+1}: ${posText}`);
+    }
+    return lines.join("\n");
+  }
+
+  function buildGameSummaryText(game){
+    const team = state.teamName?.trim() || "Home";
+    const opp = game.opponent?.trim() || "Away";
+    const titleBits = [`Round ${game.round}`];
+    if(game.gameDate) titleBits.push(game.gameDate);
+    if((game.roundName||"").trim()) titleBits.push(game.roundName.trim());
+
+    const lines = [];
+    lines.push(`${titleBits.join(" • ")}`);
+    lines.push(`${team} ${totalHome(game)} - ${totalAway(game)} ${opp}`);
+    for(let q=0;q<4;q++){
+      lines.push(`Q${q+1}: ${team} ${game.quarters[q].homeScore} - ${game.quarters[q].awayScore} ${opp}`);
+    }
+    lines.push("");
+    lines.push("Rotations:");
+    lines.push(buildRotationsText(game));
+    lines.push("");
+
+    const scorers = [...state.players]
+      .map(p=>({ name:p.name, goals:(game.playerStats[p.id]?.goalsTotal || 0) }))
+      .filter(x=>x.goals>0)
+      .sort((a,b)=>b.goals-a.goals)
+      .map(x=>`${x.name} ${x.goals}`)
+      .join(", ") || "None";
+    lines.push(`Your scorers: ${scorers}`);
+
+    if(game.notes?.trim()){
+      lines.push("");
+      lines.push(`Notes: ${game.notes.trim()}`);
+    }
+    return lines.join("\n");
+  }
+
+  function buildSeasonSummaryText(){
+    const team = state.teamName?.trim() || "Home";
+    const lines = [];
+    lines.push(`Season summary for ${team}`);
+    lines.push(`Games: ${state.games.length}`);
+    lines.push("");
+
+    lines.push("Game results:");
+    for(const g of state.games){
+      const opp = g.opponent?.trim() || "Away";
+      const bits = [`Round ${g.round}`];
+      if(g.gameDate) bits.push(g.gameDate);
+      if((g.roundName||"").trim()) bits.push(g.roundName.trim());
+      lines.push(`${bits.join(" • ")}: ${team} ${totalHome(g)} - ${totalAway(g)} ${opp}`);
+    }
+    lines.push("");
+
+    lines.push("Player season goals:");
+    const playersSorted = [...state.players]
+      .map(p=>({ name:p.name, goals:seasonGoalsForPlayer(p.id), court:seasonCourtForPlayer(p.id) }))
+      .sort((a,b)=> (b.goals-a.goals) || a.name.localeCompare(b.name));
+
+    for(const p of playersSorted){
+      lines.push(`${p.name}: ${p.goals} goals | ${p.court}/${state.games.length*4} quarters on court`);
+    }
+
+    return lines.join("\n");
+  }
+
+  /* ---------- MAIN RENDER ---------- */
   function renderAll(){
     ensureIntegrity();
     renderSeasonHeader();
     renderRoundSeg();
     renderPlayersInputs();
     renderQuarterSeg();
-    renderTimer();
-    renderLiveScoreOnly();
+    renderScores();
     renderPositions();
-    renderQuarterSummary();
+    renderBench();
+    renderStats();
+    renderGoalLog();
+    renderQuarterTable();
+    renderQuarterPositionsAll();
+    populateCopyTargets();
+    wireCopyButtons();
+    renderTimer();
+    renderAllQuarterWarn();
     updateScorerButtons();
     saveState();
   }
 
-  /* -------- ACTIONS -------- */
-  function addGame(){
-    stopTimerLoop();
-    const nextRound = state.games.length + 1;
-    state.games.push(newEmptyGame(nextRound, state.players));
-    state.currentGameIndex = state.games.length - 1;
+  /* ---------- WIRING ---------- */
+  document.getElementById("teamName").addEventListener("input", e=>{
+    state.teamName = e.target.value;
     saveState();
-    renderAll();
-  }
+    renderScores();
+    renderQuarterTable();
+    renderRoundSeg();
+  });
 
-  function prevGame(){
-    if(state.currentGameIndex <= 0) return;
-    stopTimerLoop();
-    state.currentGameIndex--;
-    saveState();
-    renderAll();
-  }
-
-  function nextGame(){
-    if(state.currentGameIndex >= state.games.length - 1) return;
-    stopTimerLoop();
-    state.currentGameIndex++;
-    saveState();
-    renderAll();
-  }
-
-  function finishQuarter(){
+  document.getElementById("opponent").addEventListener("input", e=>{
     const g = currentGame();
-    if(g.liveQ >= 3){
-      alert("You’re already on Q4 (last quarter).");
-      return;
-    }
-    resetTimer();
-    g.liveQ += 1;
-    g.selectedQ = g.liveQ;
+    g.opponent = e.target.value;
     saveState();
-    renderAll();
-  }
+    renderScores();
+    renderQuarterTable();
+    renderRoundSeg();
+  });
 
-  function scoreTeam(which, delta){
+  document.getElementById("roundName").addEventListener("input", e=>{
     const g = currentGame();
-    const q = g.liveQ;
-    if(which==="home") g.quarters[q].homeScore = clamp0(g.quarters[q].homeScore + delta);
-    else g.quarters[q].awayScore = clamp0(g.quarters[q].awayScore + delta);
+    g.roundName = e.target.value;
     saveState();
-    renderLiveScoreOnly();
-    renderQuarterSummary();
-  }
+    renderRoundSeg();
+  });
 
-  function scoreFromPosition(pos){
+  document.getElementById("gameDate").addEventListener("input", e=>{
     const g = currentGame();
-    const q = g.liveQ;
-    const pid = g.quarters[q].assignments[pos];
-    if(!pid) return alert(`Assign ${pos} in LIVE quarter first.`);
-    // credit as HOME goal
-    g.quarters[q].homeScore += 1;
+    g.gameDate = e.target.value;
     saveState();
-    renderLiveScoreOnly();
-    renderQuarterSummary();
-  }
+    renderRoundSeg();
+  });
 
-  function undo(){
-    // simple undo: remove last point from HOME if possible, else from AWAY if possible (LIVE quarter)
+  document.getElementById("notes").addEventListener("input", e=>{
     const g = currentGame();
-    const q = g.liveQ;
-    if(g.quarters[q].homeScore > 0) g.quarters[q].homeScore -= 1;
-    else if(g.quarters[q].awayScore > 0) g.quarters[q].awayScore -= 1;
+    g.notes = e.target.value;
     saveState();
-    renderLiveScoreOnly();
-    renderQuarterSummary();
-  }
+  });
 
-  /* -------- WIRING -------- */
-  document.getElementById("teamName").oninput = (e)=>{ state.teamName = e.target.value; saveState(); renderLiveScoreOnly(); renderQuarterSummary(); };
-  document.getElementById("roundName").oninput = (e)=>{ currentGame().roundName = e.target.value; saveState(); };
-  document.getElementById("gameDate").oninput  = (e)=>{ currentGame().gameDate  = e.target.value; saveState(); };
-  document.getElementById("opponent").oninput  = (e)=>{ currentGame().opponent  = e.target.value; saveState(); renderLiveScoreOnly(); renderQuarterSummary(); };
-  document.getElementById("notes").oninput     = (e)=>{ currentGame().notes     = e.target.value; saveState(); };
+  document.getElementById("homePlus").addEventListener("click", ()=>scoreTeam("home", +1));
+  document.getElementById("homeMinus").addEventListener("click", ()=>scoreTeam("home", -1));
+  document.getElementById("awayPlus").addEventListener("click", ()=>scoreTeam("away", +1));
+  document.getElementById("awayMinus").addEventListener("click", ()=>scoreTeam("away", -1));
+  document.getElementById("undoBtn").addEventListener("click", undo);
 
-  document.getElementById("addGameBtn").onclick = addGame;
-  document.getElementById("prevGameBtn").onclick = prevGame;
-  document.getElementById("nextGameBtn").onclick = nextGame;
+  document.getElementById("gsPlus").addEventListener("click", ()=>scoreFromPosition("GS"));
+  document.getElementById("gaPlus").addEventListener("click", ()=>scoreFromPosition("GA"));
 
-  document.getElementById("qtrFinishedBtn").onclick = finishQuarter;
-  document.getElementById("setLiveToEditingBtn").onclick = ()=>{
+  document.getElementById("resetAllBtn").addEventListener("click", ()=>{
+    if(confirm("Reset EVERYTHING (season players, all games, all scores)?")) resetAll();
+  });
+
+  document.getElementById("newGameBtn").addEventListener("click", ()=>{
     const g = currentGame();
-    g.liveQ = g.selectedQ;
-    saveState();
-    updateScorerButtons();
-    renderQuarterSummary();
-    document.getElementById("liveQuarterLabel").textContent = `Q${g.liveQ+1}`;
-  };
+    if(confirm(`Reset only Round ${g.round}? (Keeps players and other rounds)`)) resetThisGame();
+  });
 
-  document.getElementById("homePlus").onclick = ()=>scoreTeam("home", +1);
-  document.getElementById("homeMinus").onclick = ()=>scoreTeam("home", -1);
-  document.getElementById("awayPlus").onclick = ()=>scoreTeam("away", +1);
-  document.getElementById("awayMinus").onclick = ()=>scoreTeam("away", -1);
-  document.getElementById("undoBtn").onclick = undo;
+  document.getElementById("addGameBtn").addEventListener("click", addGame);
+  document.getElementById("prevGameBtn").addEventListener("click", goPrevGame);
+  document.getElementById("nextGameBtn").addEventListener("click", goNextGame);
 
-  document.getElementById("gsPlus").onclick = ()=>scoreFromPosition("GS");
-  document.getElementById("gaPlus").onclick = ()=>scoreFromPosition("GA");
+  document.getElementById("copySummaryBtn").addEventListener("click", ()=>{
+    copyText(buildGameSummaryText(currentGame()));
+  });
+  document.getElementById("copySeasonBtn").addEventListener("click", ()=>{
+    copyText(buildSeasonSummaryText());
+  });
+  document.getElementById("copyRotationsBtn").addEventListener("click", ()=>{
+    copyText(buildRotationsText(currentGame()));
+  });
 
-  document.getElementById("qtrMinutes").onchange = (e)=>{
+  document.getElementById("qtrFinishedBtn").addEventListener("click", finishQuarter);
+
+  document.getElementById("qtrMinutes").addEventListener("change", e=>{
     const g = currentGame();
     g.qtrMinutes = Number(e.target.value);
-    if(!g.timerRunning){
+
+    if (!g.timerRunning) {
       g.timerRemaining = g.qtrMinutes * 60;
       g.timerLastTick = 0;
     }
     saveState();
     renderTimer();
-  };
+  });
+  document.getElementById("timerStartBtn").addEventListener("click", toggleTimer);
+  document.getElementById("timerResetBtn").addEventListener("click", resetTimer);
 
-  document.getElementById("timerStartBtn").onclick = toggleTimer;
-  document.getElementById("timerResetBtn").onclick = resetTimer;
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    });
+  }
 
   renderAll();
 </script>
