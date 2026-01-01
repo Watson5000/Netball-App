@@ -52,7 +52,6 @@
     .q2 { border-left: 8px solid #43a047; }
     .q3 { border-left: 8px solid #fb8c00; }
     .q4 { border-left: 8px solid #8e24aa; }
-
     .q1 .quarterTint { color:#1e88e5; }
     .q2 .quarterTint { color:#43a047; }
     .q3 .quarterTint { color:#fb8c00; }
@@ -61,11 +60,12 @@
     .warn { padding:10px 12px; border-radius:12px; border:1px solid #ffe082; background:#fff8e1; }
   </style>
 </head>
+
 <body>
 <header>
   <h1>Netball Rotations</h1>
   <div class="sub">
-    <span>Season mode • permanent players • add games by round • round name/date • GS/GA credit goals • live quarter warnings</span>
+    <span>Season mode • permanent players • add games by round • round name/date • +score buttons • live quarter warnings • timer</span>
     <span id="saveState" class="muted"></span>
   </div>
 </header>
@@ -131,7 +131,7 @@
     </div>
   </section>
 
-  <!-- SETUP: PLAYERS -->
+  <!-- PLAYERS -->
   <section class="card" id="setupCard">
     <div class="row">
       <div class="grow">
@@ -163,6 +163,28 @@
         <span id="liveQuarterLabel">Q1</span>
       </div>
       <button class="ghost small" id="setLiveToEditingBtn">Set live = editing</button>
+      <button class="primary small" id="qtrFinishedBtn">Qtr finished → Next</button>
+    </div>
+
+    <!-- TIMER -->
+    <div class="row" style="margin-top:10px;">
+      <div class="muted">Timer:</div>
+      <div style="font-weight:950; font-size:18px;">
+        <span id="timerDisplay">10:00</span>
+      </div>
+
+      <select id="qtrMinutes" style="max-width:140px;">
+        <option value="5">5 min</option>
+        <option value="6">6 min</option>
+        <option value="7">7 min</option>
+        <option value="8">8 min</option>
+        <option value="10" selected>10 min</option>
+        <option value="12">12 min</option>
+        <option value="15">15 min</option>
+      </select>
+
+      <button class="primary small" id="timerStartBtn">Start</button>
+      <button class="ghost small" id="timerResetBtn">Reset</button>
     </div>
 
     <div style="height:12px"></div>
@@ -204,7 +226,7 @@
 
     <div style="height:10px"></div>
     <div class="muted">
-      Player goal credit: assign who is in <b>GS</b>/<b>GA</b> (live quarter), then use the <span class="kbd">+1</span> beside GS/GA.
+      Player goal credit: assign who is in <b>GS</b>/<b>GA</b> (LIVE quarter) then tap <span class="kbd">+1</span> beside GS/GA.
     </div>
 
     <div style="height:10px"></div>
@@ -225,7 +247,6 @@
       <select id="copyTargetQuarter" style="max-width:140px;"></select>
       <button class="ghost small" id="copyPositionsBtn">Copy</button>
       <button class="ghost small" id="copyToNextBtn">Copy to next</button>
-      <button class="ghost small" id="copyToAllBtn" title="Overwrite Q2–Q4 with Q1 positions">Copy to all (from Q1)</button>
     </div>
 
     <div class="grid7" id="positionsGrid"></div>
@@ -239,7 +260,7 @@
     <div class="list" id="benchList"></div>
   </section>
 
-  <!-- STATS: GAME + SEASON -->
+  <!-- STATS -->
   <section class="card">
     <div class="row">
       <div class="grow" style="font-weight:950;">Stats</div>
@@ -286,8 +307,9 @@
 
 <script>
   const POSITIONS = ["GS","GA","WA","C","WD","GD","GK"];
-  const STORAGE_KEY = "netball_season_v2_addgame_roundname_date";
+  const STORAGE_KEY = "netball_season_v3_timer_qtrfinished";
 
+  /* ---------- DATA ---------- */
   function initPlayerStats(players){
     const stats = {};
     for(const p of players){
@@ -299,19 +321,26 @@
   function newEmptyGame(roundNumber, players){
     return {
       round: roundNumber,      // 1-based
-      roundName: "",           // user label
+      roundName: "",
       gameDate: "",            // yyyy-mm-dd
       opponent: "",
       notes: "",
       selectedQ: 0,            // editing quarter
       liveQ: 0,                // scoring quarter
+
+      // timer (per game)
+      qtrMinutes: 10,
+      timerRunning: false,
+      timerRemaining: 10 * 60,
+      timerLastTick: 0,
+
       quarters: Array.from({length:4}, ()=>({
         assignments: {},       // position -> playerId
         homeScore: 0,
         awayScore: 0,
         events: []             // {type, q, payload, t}
       })),
-      playerStats: initPlayerStats(players) // { [pid]: { goalsTotal, goalsByQ } }
+      playerStats: initPlayerStats(players)
     };
   }
 
@@ -333,8 +362,9 @@
 
   function ensureIntegrity(){
     if(!state.players || state.players.length !== 10){
-      // If something goes weird, preserve what we can.
-      state.players = state.players && state.players.length ? state.players : Array.from({length:10}, (_,i)=>({id:crypto.randomUUID(), name:`Player ${i+1}`}));
+      state.players = state.players && state.players.length
+        ? state.players
+        : Array.from({length:10}, (_,i)=>({id:crypto.randomUUID(), name:`Player ${i+1}`}));
     }
     if(!state.games || state.games.length === 0){
       state.games = [newEmptyGame(1, state.players)];
@@ -349,6 +379,12 @@
       if(g.gameDate == null) g.gameDate = "";
       if(g.selectedQ == null) g.selectedQ = 0;
       if(g.liveQ == null) g.liveQ = g.selectedQ || 0;
+
+      // timer defaults/back-compat
+      if(g.qtrMinutes == null) g.qtrMinutes = 10;
+      if(g.timerRunning == null) g.timerRunning = false;
+      if(g.timerRemaining == null) g.timerRemaining = g.qtrMinutes * 60;
+      if(g.timerLastTick == null) g.timerLastTick = 0;
 
       if(!g.playerStats) g.playerStats = {};
       for(const p of state.players){
@@ -374,6 +410,7 @@
   }
 
   function resetAll(){
+    stopTimerLoop();
     state = defaultState();
     saveState();
     renderAll();
@@ -383,6 +420,7 @@
     return state.games[state.currentGameIndex];
   }
 
+  /* ---------- HELPERS ---------- */
   function escapeHtml(str){
     return (str || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   }
@@ -417,14 +455,13 @@
   }
 
   function formatShortDate(iso){
-    // iso: yyyy-mm-dd
     if(!iso) return "";
     const [y,m,d] = iso.split("-");
     if(!y || !m || !d) return iso;
-    return `${d}/${m}`; // short for button
+    return `${d}/${m}`;
   }
 
-  /* Live quarter warning gate */
+  /* ---------- LIVE QUARTER WARNING ---------- */
   function renderAllQuarterWarn(){
     const g = currentGame();
     const warnBox = document.getElementById("liveWarnBox");
@@ -432,35 +469,119 @@
       warnBox.style.display = "block";
       warnBox.textContent =
         `Heads up: you're editing Q${g.selectedQ+1}, but LIVE scoring is Q${g.liveQ+1}. ` +
-        `Scoring/undo will apply to LIVE (unless you switch).`;
+        `Scoring/undo applies to LIVE quarter.`;
     } else {
       warnBox.style.display = "none";
       warnBox.textContent = "";
     }
   }
 
-  function resolveScoringQuarter(actionLabel){
-    const g = currentGame();
-    let q = g.liveQ;
+  /* ---------- TIMER ---------- */
+  let timerInterval = null;
 
-    renderAllQuarterWarn();
-
-    if (g.selectedQ !== g.liveQ) {
-      const ok = confirm(
-        `You're editing Q${g.selectedQ+1} but LIVE quarter is Q${g.liveQ+1}.\n\n` +
-        `${actionLabel} to LIVE quarter (Q${g.liveQ+1})?\n\n` +
-        `Press OK = keep LIVE\nPress Cancel = switch LIVE to editing (Q${g.selectedQ+1})`
-      );
-      if (!ok) {
-        g.liveQ = g.selectedQ;
-        q = g.liveQ;
-        saveState();
-      }
-    }
-    return q;
+  function fmtTime(sec){
+    sec = Math.max(0, Math.floor(sec));
+    const m = String(Math.floor(sec / 60)).padStart(2,"0");
+    const s = String(sec % 60).padStart(2,"0");
+    return `${m}:${s}`;
   }
 
-  /* Events + scoring */
+  function renderTimer(){
+    const g = currentGame();
+    const display = document.getElementById("timerDisplay");
+    const btn = document.getElementById("timerStartBtn");
+    const minsSel = document.getElementById("qtrMinutes");
+    if(!display || !btn || !minsSel) return;
+
+    display.textContent = fmtTime(g.timerRemaining);
+    btn.textContent = g.timerRunning ? "Pause" : "Start";
+    minsSel.value = String(g.qtrMinutes);
+  }
+
+  function tickTimer(){
+    const g = currentGame();
+    if(!g.timerRunning) return;
+
+    const now = Date.now();
+    if(!g.timerLastTick) g.timerLastTick = now;
+
+    const delta = Math.floor((now - g.timerLastTick) / 1000);
+    if(delta <= 0) return;
+
+    g.timerRemaining = Math.max(0, g.timerRemaining - delta);
+    g.timerLastTick = now;
+
+    if(g.timerRemaining === 0){
+      g.timerRunning = false;
+      stopTimerLoop();
+      saveState();
+      renderTimer();
+      alert("Time!");
+      return;
+    }
+
+    saveState();
+    renderTimer();
+  }
+
+  function startTimerLoop(){
+    if(timerInterval) return;
+    timerInterval = setInterval(tickTimer, 250);
+  }
+
+  function stopTimerLoop(){
+    if(!timerInterval) return;
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
+  function toggleTimer(){
+    const g = currentGame();
+
+    if(g.timerRunning){
+      g.timerRunning = false;
+      saveState();
+      stopTimerLoop();
+      renderTimer();
+      return;
+    }
+
+    g.timerRunning = true;
+    g.timerLastTick = Date.now();
+    saveState();
+    startTimerLoop();
+    renderTimer();
+  }
+
+  function resetTimer(){
+    const g = currentGame();
+    g.timerRunning = false;
+    g.timerRemaining = g.qtrMinutes * 60;
+    g.timerLastTick = 0;
+    saveState();
+    stopTimerLoop();
+    renderTimer();
+  }
+
+  /* ---------- QUARTER FINISHED ---------- */
+  function finishQuarter(){
+    const g = currentGame();
+
+    if (g.liveQ >= 3) {
+      alert("You’re already on Q4 (last quarter).");
+      return;
+    }
+
+    // stop + reset timer for the next quarter
+    resetTimer();
+
+    g.liveQ += 1;
+    g.selectedQ = g.liveQ;
+    saveState();
+    renderAll();
+  }
+
+  /* ---------- SCORING + EVENTS ---------- */
   function pushEvent(game, q, type, payload){
     game.quarters[q].events.push({ type, q, payload, t: Date.now() });
     saveState();
@@ -468,24 +589,27 @@
 
   function scoreTeam(which, delta){
     const g = currentGame();
-    const q = resolveScoringQuarter("Add score");
+    const q = g.liveQ;
+
     if(which==="home"){
       g.quarters[q].homeScore = clamp0(g.quarters[q].homeScore + delta);
     } else {
       g.quarters[q].awayScore = clamp0(g.quarters[q].awayScore + delta);
     }
+
     pushEvent(g, q, "score", { which, delta });
     renderScores();
     renderQuarterTable();
     renderGoalLog();
     renderRoundSeg();
+    renderAllQuarterWarn();
   }
 
   function scoreFromPosition(pos){
     if(pos!=="GS" && pos!=="GA") return;
 
     const g = currentGame();
-    const q = resolveScoringQuarter("Credit goal");
+    const q = g.liveQ;
 
     const pid = g.quarters[q].assignments[pos];
     if(!pid) return alert(`Assign a player to ${pos} in LIVE quarter (Q${q+1}) first.`);
@@ -502,11 +626,13 @@
     renderGoalLog();
     renderQuarterTable();
     renderRoundSeg();
+    renderAllQuarterWarn();
   }
 
   function undo(){
     const g = currentGame();
-    const q = resolveScoringQuarter("Undo last event");
+    const q = g.liveQ;
+
     const events = g.quarters[q].events;
     const last = events.pop();
     if(!last) return;
@@ -533,13 +659,15 @@
     renderGoalLog();
     renderQuarterTable();
     renderRoundSeg();
+    renderAllQuarterWarn();
   }
 
-  /* Assignments (editing quarter) */
+  /* ---------- ASSIGNMENTS (EDITING QUARTER) ---------- */
   function setAssignment(pos, pid){
     const g = currentGame();
     const q = g.selectedQ;
 
+    // prevent same player in two positions in same quarter
     if(pid){
       for(const p of POSITIONS){
         if(p !== pos && g.quarters[q].assignments[p] === pid){
@@ -556,7 +684,7 @@
     renderQuarterPositionsAll();
   }
 
-  /* Copy positions */
+  /* ---------- COPY POSITIONS ---------- */
   function populateCopyTargets(){
     const g = currentGame();
     const sel = document.getElementById("copyTargetQuarter");
@@ -571,34 +699,43 @@
       sel.appendChild(opt);
     }
   }
+
   function copyAssignments(fromQ, toQ){
     const g = currentGame();
     g.quarters[toQ].assignments = JSON.parse(JSON.stringify(g.quarters[fromQ].assignments || {}));
     saveState();
   }
 
-  /* Game management */
+  /* ---------- GAME MANAGEMENT ---------- */
   function addGame(){
     const nextRound = state.games.length + 1;
     const g = newEmptyGame(nextRound, state.players);
     state.games.push(g);
     state.currentGameIndex = state.games.length - 1;
+
+    stopTimerLoop(); // prevent any old interval confusion
     saveState();
     renderAll();
   }
+
   function goPrevGame(){
     if(state.currentGameIndex <= 0) return;
+    stopTimerLoop();
     state.currentGameIndex -= 1;
     saveState();
     renderAll();
   }
+
   function goNextGame(){
     if(state.currentGameIndex >= state.games.length - 1) return;
+    stopTimerLoop();
     state.currentGameIndex += 1;
     saveState();
     renderAll();
   }
+
   function resetThisGame(){
+    stopTimerLoop();
     const idx = state.currentGameIndex;
     const round = state.games[idx].round;
     state.games[idx] = newEmptyGame(round, state.players);
@@ -606,7 +743,7 @@
     renderAll();
   }
 
-  /* Renders */
+  /* ---------- RENDER ---------- */
   function renderSeasonHeader(){
     const g = currentGame();
     document.getElementById("roundLabel").textContent = `Round ${g.round}`;
@@ -615,11 +752,10 @@
     document.getElementById("roundName").value = g.roundName || "";
     document.getElementById("gameDate").value = g.gameDate || "";
     document.getElementById("notes").value = g.notes || "";
+    document.getElementById("teamName").value = state.teamName || "";
 
     document.getElementById("prevGameBtn").disabled = (state.currentGameIndex <= 0);
     document.getElementById("nextGameBtn").disabled = (state.currentGameIndex >= state.games.length - 1);
-
-    document.getElementById("teamName").value = state.teamName || "";
   }
 
   function renderRoundSeg(){
@@ -631,17 +767,20 @@
       const g = state.games[i];
       const b = document.createElement("button");
 
-      // short button text: R# + optional short date + short name
       const d = formatShortDate(g.gameDate);
+      const opp = (g.opponent || "").trim();
       const name = (g.roundName || "").trim();
-      const nameShort = name.length > 12 ? (name.slice(0,12) + "…") : name;
+      const nameShort = name.length > 10 ? (name.slice(0,10) + "…") : name;
+
       const parts = [`R${g.round}`];
       if(d) parts.push(d);
+      if(opp) parts.push(opp);
       if(nameShort) parts.push(nameShort);
-      b.textContent = parts.join(" • ");
 
+      b.textContent = parts.join(" • ");
       b.className = (i === state.currentGameIndex) ? "active" : "";
       b.addEventListener("click", ()=>{
+        stopTimerLoop();
         state.currentGameIndex = i;
         saveState();
         renderAll();
@@ -688,6 +827,8 @@
       b.className = (g.selectedQ===i) ? "active" : "";
       b.addEventListener("click", ()=>{
         g.selectedQ = i;
+        // timer resets on quarter switch, but DOES NOT auto-start
+        resetTimer();
         saveState();
         renderAll();
       });
@@ -706,6 +847,7 @@
       renderAllQuarterWarn();
     };
 
+    // colour theme based on EDITING quarter
     const qc = document.getElementById("quarterCard");
     qc.classList.remove("q1","q2","q3","q4");
     qc.classList.add(`q${g.selectedQ + 1}`);
@@ -738,7 +880,7 @@
     const g = currentGame();
     const grid = document.getElementById("positionsGrid");
     grid.innerHTML = "";
-    const q = g.selectedQ;
+    const q = g.selectedQ; // editing quarter
 
     POSITIONS.forEach(pos=>{
       const row = document.createElement("div");
@@ -943,23 +1085,9 @@
         alert(`Copied Q${g.selectedQ+1} positions to Q${target+1}.`);
       };
     }
-
-    const allBtn = document.getElementById("copyToAllBtn");
-    if(allBtn){
-      allBtn.onclick = () => {
-        const ok = confirm(`Copy Q1 positions to Q2–Q4?\nThis will overwrite Q2, Q3, Q4 positions.`);
-        if(!ok) return;
-        copyAssignments(0,1);
-        copyAssignments(0,2);
-        copyAssignments(0,3);
-        renderQuarterPositionsAll();
-        renderBench();
-        renderStats();
-        alert(`Copied Q1 positions to Q2–Q4.`);
-      };
-    }
   }
 
+  /* ---------- COPY TEXT ---------- */
   async function copyText(text){
     try{
       await navigator.clipboard.writeText(text);
@@ -1041,6 +1169,7 @@
     return lines.join("\n");
   }
 
+  /* ---------- MAIN RENDER ---------- */
   function renderAll(){
     ensureIntegrity();
     renderSeasonHeader();
@@ -1056,10 +1185,12 @@
     renderQuarterPositionsAll();
     populateCopyTargets();
     wireCopyButtons();
+    renderTimer();
+    renderAllQuarterWarn();
     saveState();
   }
 
-  /* Wiring */
+  /* ---------- WIRING ---------- */
   document.getElementById("teamName").addEventListener("input", e=>{
     state.teamName = e.target.value;
     saveState();
@@ -1086,7 +1217,7 @@
 
   document.getElementById("gameDate").addEventListener("input", e=>{
     const g = currentGame();
-    g.gameDate = e.target.value; // yyyy-mm-dd
+    g.gameDate = e.target.value;
     saveState();
     renderRoundSeg();
   });
@@ -1126,14 +1257,33 @@
     copyText(buildRotationsText(currentGame()));
   });
 
-  /* PWA offline */
+  // quarter finished
+  document.getElementById("qtrFinishedBtn").addEventListener("click", finishQuarter);
+
+  // timer controls
+  document.getElementById("qtrMinutes").addEventListener("change", e=>{
+    const g = currentGame();
+    g.qtrMinutes = Number(e.target.value);
+
+    // if not running, set remaining to full length
+    if (!g.timerRunning) {
+      g.timerRemaining = g.qtrMinutes * 60;
+      g.timerLastTick = 0;
+    }
+    saveState();
+    renderTimer();
+  });
+  document.getElementById("timerStartBtn").addEventListener("click", toggleTimer);
+  document.getElementById("timerResetBtn").addEventListener("click", resetTimer);
+
+  /* ---------- PWA OFFLINE ---------- */
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').catch(()=>{});
     });
   }
 
-  /* initial */
+  /* ---------- INIT ---------- */
   renderAll();
 </script>
 </body>
