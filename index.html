@@ -90,9 +90,20 @@
       padding:6px 8px;
       font-weight:950;
       line-height:1;
-      margin-right:8px; /* space between arrow + heading */
+      margin-right:8px;
     }
     .card.collapsed .rollBody{ display:none; }
+
+    /* Player remove button */
+    .miniDanger{
+      border:1px solid #c62828;
+      color:#c62828;
+      background:#fff;
+      border-radius:12px;
+      padding:10px 12px;
+      font-weight:950;
+      line-height:1;
+    }
   </style>
 </head>
 
@@ -114,7 +125,7 @@
 </header>
 
 <main>
-  <!-- WELCOME / GUIDE (shown when no teams exist) -->
+  <!-- WELCOME -->
   <section class="card" id="welcomeCard">
     <div style="font-weight:950; font-size:18px;">Welcome 👋</div>
     <div class="muted" style="margin-top:6px;">
@@ -199,9 +210,13 @@
     <div class="row">
       <div class="grow">
         <div style="font-weight:950;margin-bottom:6px;">Players (for this team)</div>
-        <div class="muted">Unique list per team. Change anytime.</div>
+        <div class="muted">Add/remove players if your team list isn’t 10.</div>
       </div>
+
+      <!-- NEW: add player button next to player box heading -->
+      <button class="primary small" id="addPlayerBtn">+ Player</button>
     </div>
+
     <div style="height:10px"></div>
     <div class="row" id="playersInputs" style="display:grid; grid-template-columns: 1fr; gap:10px;"></div>
   </section>
@@ -282,7 +297,6 @@
       <div class="muted">Bench auto-updates (editing period)</div>
     </div>
 
-    <!-- Period buttons also in positions (linked) -->
     <div class="row" style="margin-top:10px;">
       <div class="grow" style="font-weight:950;">Editing period (positions)</div>
       <div class="seg" id="periodSegPos"></div>
@@ -329,7 +343,7 @@
   <section class="card" id="summaryCard">
     <div class="row">
       <div class="grow" style="font-weight:950;">Period Summary (this game)</div>
-      <button class="ghost small" id="copyRotationsBtn">Copy Rotations</button>
+      <!-- REMOVED: Copy Rotations button -->
     </div>
     <div style="height:10px"></div>
     <div id="periodTableWrap"></div>
@@ -370,11 +384,6 @@
         <div>• <b>Home/Away +1</b> adds a goal to the <b>Live</b> period.</div>
         <div>• <b>+GS / +GA</b> credits the player assigned to GS/GA in the <b>Live</b> period.</div>
         <div>• <b>Undo</b> removes the last scoring event in the <b>Live</b> period.</div>
-
-        <div style="font-weight:950; color:#111; margin:12px 0 6px;">Player dropdown number</div>
-        <div>• On-court dropdown shows <b>Player • X/Y</b>.</div>
-        <div>• <b>X</b> = regulation periods on-court (quarters/halves only).</div>
-        <div>• <b>OT is not counted</b> in X.</div>
 
         <div style="font-weight:950; color:#111; margin:12px 0 6px;">Timer</div>
         <div>• League minutes: 10 / 12 / 15 (default 10).</div>
@@ -456,13 +465,9 @@
 </main>
 
 <script>
-  /* =======================
-     MULTI TEAM STORAGE
-  ======================= */
   const TEAMS_INDEX_KEY = "netball_teams_index_v3_notdefault";
   const TEAM_KEY_PREFIX = "netball_team_v3_";
   const HOWTO_FLAG_KEY  = "netball_howto_seen_v1";
-
   const POSITIONS = ["GS","GA","WA","C","WD","GD","GK"];
 
   const LEAGUE_MINUTES = [10,12,15];
@@ -470,6 +475,9 @@
   const OT_DEFAULT     = 3;
   const TOURN_DEFAULT  = 8;
   const LEAGUE_DEFAULT = 10;
+
+  const MIN_PLAYERS = 7;   // must have at least 7 to fill court
+  const MAX_PLAYERS = 15;  // safety cap
 
   function safeJSONParse(raw){ try { return raw ? JSON.parse(raw) : null; } catch { return null; } }
   function loadTeamsIndex(){ return safeJSONParse(localStorage.getItem(TEAMS_INDEX_KEY)); }
@@ -570,10 +578,15 @@
       teamState = loadTeamState(teamsIndex.currentTeamId) || defaultTeamState(meta?.format || "quarters");
     }
 
-    if(!teamState.players || teamState.players.length !== 10) teamState.players = newPlayers10();
+    if(!Array.isArray(teamState.players) || teamState.players.length < MIN_PLAYERS){
+      teamState.players = newPlayers10();
+    }
+
     if(!teamState.format) teamState.format = currentTeamMeta().format || "quarters";
 
-    if(!teamState.games || teamState.games.length===0) teamState.games = [newEmptyGame(1, teamState.players, teamState.format)];
+    if(!Array.isArray(teamState.games) || teamState.games.length===0){
+      teamState.games = [newEmptyGame(1, teamState.players, teamState.format)];
+    }
     if(teamState.currentGameIndex == null) teamState.currentGameIndex = 0;
     teamState.currentGameIndex = Math.max(0, Math.min(teamState.currentGameIndex, teamState.games.length-1));
 
@@ -610,7 +623,7 @@
       const needLen = baseP + (g.otCount || 0);
       while(g.periods.length < needLen) g.periods.push(emptyPeriod());
 
-      if(!g.playerStats) g.playerStats = initPlayerStats(teamState.players);
+      if(!g.playerStats) g.playerStats = {};
       for(const p of teamState.players){
         if(!g.playerStats[p.id]){
           g.playerStats[p.id] = { goalsTotal:0, goalsByP:Array.from({length:6}, ()=>0) };
@@ -631,57 +644,6 @@
     setTimeout(()=> el.textContent = "", 700);
   }
 
-  /* =======================
-     ROLL-UPS (arrow LEFT next to heading)
-  ======================= */
-  function initRollups(){
-    const cards = document.querySelectorAll(".card");
-    cards.forEach(card=>{
-      if(card.classList.contains("rollInit")) return;
-      card.classList.add("rollInit");
-
-      const firstRow = card.querySelector(".row");
-      if(!firstRow) return;
-
-      const btn = document.createElement("button");
-      btn.className = "rollBtn";
-      btn.type = "button";
-      btn.textContent = "▾";
-      btn.setAttribute("aria-label", "Collapse/expand");
-
-      // Insert button at the START of the header row (left of heading)
-      firstRow.insertBefore(btn, firstRow.firstChild);
-
-      const body = document.createElement("div");
-      body.className = "rollBody";
-
-      let sibling = firstRow.nextSibling;
-      while(sibling){
-        const next = sibling.nextSibling;
-        body.appendChild(sibling);
-        sibling = next;
-      }
-      card.appendChild(body);
-
-      const key = `roll_${card.id || ("card_" + Math.random().toString(16).slice(2))}`;
-
-      const saved = localStorage.getItem(key);
-      if(saved === "1"){
-        card.classList.add("collapsed");
-        btn.textContent = "▸";
-      }
-
-      btn.addEventListener("click", ()=>{
-        const collapsed = card.classList.toggle("collapsed");
-        btn.textContent = collapsed ? "▸" : "▾";
-        localStorage.setItem(key, collapsed ? "1" : "0");
-      });
-    });
-  }
-
-  /* =======================
-     HELPERS
-  ======================= */
   function stopTimerLoop(){ if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } }
   function currentGame(){ return teamState.games[teamState.currentGameIndex]; }
   function periodLabel(idx){
@@ -717,6 +679,62 @@
   function canStartOT(game){ return game.gameEnded && isDraw(game) && (game.otCount || 0) === 0; }
   function clamp0(n){ return Math.max(0, n); }
 
+  /* ===== NEW: ADD / REMOVE PLAYERS ===== */
+  function clearPlayerFromAssignments(pid){
+    for(const g of teamState.games){
+      for(const per of g.periods){
+        for(const pos of POSITIONS){
+          if(per.assignments?.[pos] === pid) per.assignments[pos] = null;
+        }
+      }
+    }
+  }
+
+  function addPlayer(){
+    if(!hasTeams()) return;
+    if(teamState.players.length >= MAX_PLAYERS) return alert(`Max players is ${MAX_PLAYERS}.`);
+
+    const nextNum = teamState.players.length + 1;
+    const p = { id: crypto.randomUUID(), name: `Player ${nextNum}` };
+    teamState.players.push(p);
+
+    // Ensure each game has stats entry
+    for(const g of teamState.games){
+      if(!g.playerStats) g.playerStats = {};
+      g.playerStats[p.id] = { goalsTotal:0, goalsByP:Array.from({length:6}, ()=>0) };
+    }
+
+    saveAll();
+    renderAll();
+  }
+
+  function removePlayer(pid){
+    if(!hasTeams()) return;
+    if(teamState.players.length <= MIN_PLAYERS){
+      return alert(`You must keep at least ${MIN_PLAYERS} players (to cover 7 on court).`);
+    }
+
+    const p = playerById(pid);
+    const name = p?.name || "this player";
+    const ok = confirm(`Remove ${name} from this team?\n\nThis will also remove them from all on-court selections.`);
+    if(!ok) return;
+
+    // Remove from assignments in all games/periods
+    clearPlayerFromAssignments(pid);
+
+    // Remove stats entries (game history for that player will no longer display)
+    for(const g of teamState.games){
+      if(g.playerStats) delete g.playerStats[pid];
+      // Note: goal log events referencing this pid will show as Unknown (safe)
+    }
+
+    // Remove from player list
+    teamState.players = teamState.players.filter(x => x.id !== pid);
+
+    saveAll();
+    renderAll();
+  }
+
   /* =======================
      HOW-TO
   ======================= */
@@ -724,14 +742,55 @@
   function closeHowto(){ document.getElementById("howtoBack").style.display="none"; }
   function markHowtoSeen(){ localStorage.setItem(HOWTO_FLAG_KEY, "1"); }
   function hasSeenHowto(){ return localStorage.getItem(HOWTO_FLAG_KEY) === "1"; }
-
-  // IMPORTANT: How-to must show before Add Team (first run)
   function closeHowtoAndContinue(){
     markHowtoSeen();
     closeHowto();
-    if(!hasTeams()){
-      openTeamModal();
-    }
+    if(!hasTeams()) openTeamModal();
+  }
+
+  /* =======================
+     ROLL-UPS
+  ======================= */
+  function initRollups(){
+    const cards = document.querySelectorAll(".card");
+    cards.forEach(card=>{
+      if(card.classList.contains("rollInit")) return;
+      card.classList.add("rollInit");
+
+      const firstRow = card.querySelector(".row");
+      if(!firstRow) return;
+
+      const btn = document.createElement("button");
+      btn.className = "rollBtn";
+      btn.type = "button";
+      btn.textContent = "▾";
+      btn.setAttribute("aria-label", "Collapse/expand");
+      firstRow.insertBefore(btn, firstRow.firstChild);
+
+      const body = document.createElement("div");
+      body.className = "rollBody";
+
+      let sibling = firstRow.nextSibling;
+      while(sibling){
+        const next = sibling.nextSibling;
+        body.appendChild(sibling);
+        sibling = next;
+      }
+      card.appendChild(body);
+
+      const key = `roll_${card.id || ("card_" + Math.random().toString(16).slice(2))}`;
+      const saved = localStorage.getItem(key);
+      if(saved === "1"){
+        card.classList.add("collapsed");
+        btn.textContent = "▸";
+      }
+
+      btn.addEventListener("click", ()=>{
+        const collapsed = card.classList.toggle("collapsed");
+        btn.textContent = collapsed ? "▸" : "▾";
+        localStorage.setItem(key, collapsed ? "1" : "0");
+      });
+    });
   }
 
   /* =======================
@@ -768,7 +827,6 @@
         const base = basePeriods(teamState.format);
         const ot2Index = base + 1;
 
-        // OT2 play-on: if tied at 0, flip to count-up
         if(g.otCount === 2 && g.liveP === ot2Index && isDraw(g)){
           g.timerMode = "countup";
           g.timerExtraElapsed = 0;
@@ -784,8 +842,6 @@
       }
     } else {
       g.timerExtraElapsed += delta;
-
-      // play-on ends when lead by 2
       const lead = Math.abs(totalHome(g) - totalAway(g));
       if(lead >= 2){
         g.timerRunning = false;
@@ -1272,15 +1328,16 @@
     teamState.players.forEach((p, idx)=>{
       const div = document.createElement("div");
       div.className = "row";
+
       div.innerHTML = `
         <div class="grow">
           <div class="muted">Player ${idx+1}</div>
           <input type="text" value="${escapeHtml(p.name)}" data-pid="${p.id}" />
         </div>
+        <button class="miniDanger" type="button" title="Remove player">−</button>
       `;
-      const input = div.querySelector("input");
 
-      // IMPORTANT FIX: don't renderAll on each keystroke (keeps focus!)
+      const input = div.querySelector("input");
       input.addEventListener("input", (e)=>{
         p.name = e.target.value;
         saveAll();
@@ -1292,6 +1349,9 @@
         renderAllPeriodsPositions();
         renderRoundSeg();
       });
+
+      const delBtn = div.querySelector("button.miniDanger");
+      delBtn.addEventListener("click", ()=> removePlayer(p.id));
 
       wrap.appendChild(div);
     });
@@ -1378,7 +1438,6 @@
   }
 
   function renderPositions(){
-    if(!hasTeams()) return;
     const g = currentGame();
     const grid = document.getElementById("positionsGrid");
     grid.innerHTML = "";
@@ -1643,7 +1702,6 @@
   /* =======================
      WIRING
   ======================= */
-  // How-to
   document.getElementById("howtoBtn").addEventListener("click", openHowto);
   document.getElementById("howtoClose").addEventListener("click", closeHowtoAndContinue);
   document.getElementById("howtoOk").addEventListener("click", closeHowtoAndContinue);
@@ -1652,19 +1710,15 @@
     if(e.target.id==="howtoBack") closeHowtoAndContinue();
   });
 
-  // Welcome add team
-  document.getElementById("welcomeAddTeamBtn").addEventListener("click", addTeam);
+  document.getElementById("welcomeAddTeamBtn").addEventListener("click", ()=>{ openTeamModal(); });
 
-  // Team modal
-  document.getElementById("addTeamBtn").addEventListener("click", addTeam);
+  document.getElementById("addTeamBtn").addEventListener("click", ()=>{ openTeamModal(); });
   document.getElementById("teamClose").addEventListener("click", closeTeamModal);
   document.getElementById("teamCreateBtn").addEventListener("click", createTeamFromModal);
   document.getElementById("teamBack").addEventListener("click", (e)=>{ if(e.target.id==="teamBack") closeTeamModal(); });
 
-  // Delete team
   document.getElementById("deleteTeamBtn").addEventListener("click", deleteCurrentTeam);
 
-  // Team name
   document.getElementById("teamName").addEventListener("input", e=>{
     teamState.teamName = e.target.value;
     const meta = currentTeamMeta();
@@ -1674,7 +1728,6 @@
     renderRoundSeg();
   });
 
-  // Game fields
   document.getElementById("opponent").addEventListener("input", e=>{
     currentGame().opponent = e.target.value;
     saveAll(); renderScores(); renderPeriodTable(); renderRoundSeg();
@@ -1692,7 +1745,6 @@
     saveAll();
   });
 
-  // Games
   document.getElementById("addGameBtn").addEventListener("click", addGame);
   document.getElementById("prevGameBtn").addEventListener("click", goPrevGame);
   document.getElementById("nextGameBtn").addEventListener("click", goNextGame);
@@ -1702,19 +1754,16 @@
   });
   document.getElementById("resetTeamBtn").addEventListener("click", resetTeamSeason);
 
-  // Live = editing
   document.getElementById("setLiveToEditingBtn").addEventListener("click", ()=>{
     const g = currentGame();
     g.liveP = g.selectedP;
     saveAll(); renderAll();
   });
 
-  // Period finished / OT / reopen
   document.getElementById("periodFinishedBtn").addEventListener("click", endOrNextPeriod);
   document.getElementById("startOTBtn").addEventListener("click", startOT);
   document.getElementById("reopenBtn").addEventListener("click", reopenGame);
 
-  // Minutes (regulation)
   document.getElementById("minutesSelect").addEventListener("change", e=>{
     const g = currentGame();
     g.baseMinutes = Number(e.target.value);
@@ -1726,11 +1775,9 @@
     renderAll();
   });
 
-  // Timer
   document.getElementById("timerStartBtn").addEventListener("click", toggleTimer);
   document.getElementById("timerResetBtn").addEventListener("click", resetTimer);
 
-  // Scoring
   document.getElementById("homePlus").addEventListener("click", ()=>scoreTeam("home", +1));
   document.getElementById("homeMinus").addEventListener("click", ()=>scoreTeam("home", -1));
   document.getElementById("awayPlus").addEventListener("click", ()=>scoreTeam("away", +1));
@@ -1739,12 +1786,9 @@
   document.getElementById("gaPlus").addEventListener("click", ()=>scoreFromPosition("GA"));
   document.getElementById("undoBtn").addEventListener("click", undo);
 
-  // Copy
   document.getElementById("copySummaryBtn").addEventListener("click", ()=>copyText(buildGameSummaryText(currentGame())));
   document.getElementById("copySeasonBtn").addEventListener("click", ()=>copyText(buildSeasonSummaryText()));
-  document.getElementById("copyRotationsBtn").addEventListener("click", ()=>copyText(buildRotationsText(currentGame())));
 
-  // Sync
   document.getElementById("syncBtn").addEventListener("click", ()=>{
     document.getElementById("syncText").value = "";
     openSyncModal();
@@ -1755,6 +1799,9 @@
   document.getElementById("syncImport").addEventListener("click", importTeam);
   document.getElementById("syncClear").addEventListener("click", ()=>{ document.getElementById("syncText").value=""; });
 
+  // NEW: Add player button
+  document.getElementById("addPlayerBtn").addEventListener("click", addPlayer);
+
   /* =======================
      INIT
   ======================= */
@@ -1763,10 +1810,10 @@
   }
   ensureIntegrityAll();
 
-  initRollups();   // arrows (left) + collapse behaviour
-  renderAll();     // render UI
+  initRollups();
+  renderAll();
 
-  // SHOW HOW-TO FIRST, THEN TEAM MODAL
+  // show how-to first, then add-team
   if(!hasSeenHowto()){
     openHowto();
   } else if(!hasTeams()){
