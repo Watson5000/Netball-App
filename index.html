@@ -82,15 +82,15 @@
     .finalBanner .small{ font-size:12px; font-weight:900; opacity:.85; }
     .finalBanner .big{ font-size:18px; font-weight:950; margin-top:4px; }
 
-    /* Roll-up button */
+    /* Roll-up button (LEFT of heading) */
     .rollBtn{
       border:1px solid #ddd;
       background:#fff;
       border-radius:12px;
-      padding:8px 10px;
+      padding:6px 8px;
       font-weight:950;
       line-height:1;
-      margin-left:auto;
+      margin-right:8px; /* space between arrow + heading */
     }
     .card.collapsed .rollBody{ display:none; }
   </style>
@@ -379,12 +379,11 @@
         <div style="font-weight:950; color:#111; margin:12px 0 6px;">Timer</div>
         <div>• League minutes: 10 / 12 / 15 (default 10).</div>
         <div>• Tournament minutes: 5–10 (default 8).</div>
-        <div>• Timer resets when you change the <b>editing</b> period.</div>
 
         <div style="font-weight:950; color:#111; margin:12px 0 6px;">End game + Overtime</div>
         <div>• <b>End game</b> locks scoring.</div>
         <div>• If tied, start <b>OT</b> → this app plays <b>OT1 and OT2 always</b>.</div>
-        <div>• In <b>OT2</b>, if time hits 0 and still tied → flips to <b>play-on</b> until a team leads by <b>2</b> (then auto-end).</div>
+        <div>• In <b>OT2</b>, if time hits 0 and still tied → flips to <b>play-on</b> until a team leads by <b>2</b> (auto-end).</div>
         <div>• Use <b>Re-open game</b> if you ended by mistake.</div>
       </div>
 
@@ -468,7 +467,6 @@
 
   const LEAGUE_MINUTES = [10,12,15];
   const TOURN_MINUTES  = [5,6,7,8,9,10];
-  const OT_MINUTES     = [2,3,4,5];
   const OT_DEFAULT     = 3;
   const TOURN_DEFAULT  = 8;
   const LEAGUE_DEFAULT = 10;
@@ -481,7 +479,7 @@
   function saveTeamState(teamId, teamState){ localStorage.setItem(teamStorageKey(teamId), JSON.stringify(teamState)); }
 
   function defaultIndexIfMissing(){
-    const idx = { teams: [], currentTeamId: null }; // no default team
+    const idx = { teams: [], currentTeamId: null };
     saveTeamsIndex(idx);
     return idx;
   }
@@ -521,7 +519,7 @@
       selectedP: 0,
       liveP: 0,
 
-      otCount: 0,     // 0 or 2
+      otCount: 0,
       otMinutes: OT_DEFAULT,
 
       gameEnded: false,
@@ -530,7 +528,7 @@
       timerRunning: false,
       timerRemaining: baseMins * 60,
       timerLastTick: 0,
-      timerMode: "countdown",   // "countdown" | "countup"
+      timerMode: "countdown",
       timerExtraElapsed: 0,
 
       periods: Array.from({length:baseP}, ()=>emptyPeriod()),
@@ -542,7 +540,7 @@
     const players = newPlayers10();
     return {
       teamName: "",
-      format: format, // "quarters" | "halves"
+      format: format,
       players,
       games: [newEmptyGame(1, players, format)],
       currentGameIndex: 0
@@ -634,7 +632,7 @@
   }
 
   /* =======================
-     ROLL-UPS (keep existing headings)
+     ROLL-UPS (arrow LEFT next to heading)
   ======================= */
   function initRollups(){
     const cards = document.querySelectorAll(".card");
@@ -650,7 +648,9 @@
       btn.type = "button";
       btn.textContent = "▾";
       btn.setAttribute("aria-label", "Collapse/expand");
-      firstRow.appendChild(btn);
+
+      // Insert button at the START of the header row (left of heading)
+      firstRow.insertBefore(btn, firstRow.firstChild);
 
       const body = document.createElement("div");
       body.className = "rollBody";
@@ -725,6 +725,15 @@
   function markHowtoSeen(){ localStorage.setItem(HOWTO_FLAG_KEY, "1"); }
   function hasSeenHowto(){ return localStorage.getItem(HOWTO_FLAG_KEY) === "1"; }
 
+  // IMPORTANT: How-to must show before Add Team (first run)
+  function closeHowtoAndContinue(){
+    markHowtoSeen();
+    closeHowto();
+    if(!hasTeams()){
+      openTeamModal();
+    }
+  }
+
   /* =======================
      TIMER
   ======================= */
@@ -758,6 +767,8 @@
 
         const base = basePeriods(teamState.format);
         const ot2Index = base + 1;
+
+        // OT2 play-on: if tied at 0, flip to count-up
         if(g.otCount === 2 && g.liveP === ot2Index && isDraw(g)){
           g.timerMode = "countup";
           g.timerExtraElapsed = 0;
@@ -774,6 +785,7 @@
     } else {
       g.timerExtraElapsed += delta;
 
+      // play-on ends when lead by 2
       const lead = Math.abs(totalHome(g) - totalAway(g));
       if(lead >= 2){
         g.timerRunning = false;
@@ -1161,11 +1173,6 @@
     return lines.join("\n");
   }
 
-  function openSync(){
-    document.getElementById("syncText").value = "";
-    openSyncModal();
-  }
-
   function exportTeam(){
     const meta = currentTeamMeta();
     const payload = { meta, teamState };
@@ -1271,11 +1278,21 @@
           <input type="text" value="${escapeHtml(p.name)}" data-pid="${p.id}" />
         </div>
       `;
-      div.querySelector("input").addEventListener("input", (e)=>{
+      const input = div.querySelector("input");
+
+      // IMPORTANT FIX: don't renderAll on each keystroke (keeps focus!)
+      input.addEventListener("input", (e)=>{
         p.name = e.target.value;
         saveAll();
-        renderAll();
+
+        // Update only what needs names (no full rebuild)
+        renderPositions();
+        renderScores();
+        renderStats();
+        renderAllPeriodsPositions();
+        renderRoundSeg();
       });
+
       wrap.appendChild(div);
     });
   }
@@ -1361,6 +1378,7 @@
   }
 
   function renderPositions(){
+    if(!hasTeams()) return;
     const g = currentGame();
     const grid = document.getElementById("positionsGrid");
     grid.innerHTML = "";
@@ -1531,7 +1549,6 @@
 
   function wireCopyButtons(){
     const g = currentGame();
-
     document.getElementById("copyPositionsBtn").onclick = ()=>{
       const target = Number(document.getElementById("copyTargetPeriod").value);
       const ok = confirm(`Copy positions from ${periodLabel(g.selectedP)} to ${periodLabel(target)}?\nThis will overwrite ${periodLabel(target)} positions.`);
@@ -1596,7 +1613,6 @@
   function renderAll(){
     ensureIntegrityAll();
 
-    // Welcome state
     const showWelcome = !hasTeams();
     document.getElementById("welcomeCard").style.display = showWelcome ? "block" : "none";
     const sections = ["topCard","setupCard","periodCard","positionsCard","statsCard","summaryCard","notesCard"];
@@ -1629,10 +1645,12 @@
   ======================= */
   // How-to
   document.getElementById("howtoBtn").addEventListener("click", openHowto);
-  document.getElementById("howtoClose").addEventListener("click", ()=>{ markHowtoSeen(); closeHowto(); });
-  document.getElementById("howtoOk").addEventListener("click", ()=>{ markHowtoSeen(); closeHowto(); });
-  document.getElementById("howtoDontShow").addEventListener("click", ()=>{ markHowtoSeen(); closeHowto(); });
-  document.getElementById("howtoBack").addEventListener("click", (e)=>{ if(e.target.id==="howtoBack"){ markHowtoSeen(); closeHowto(); } });
+  document.getElementById("howtoClose").addEventListener("click", closeHowtoAndContinue);
+  document.getElementById("howtoOk").addEventListener("click", closeHowtoAndContinue);
+  document.getElementById("howtoDontShow").addEventListener("click", closeHowtoAndContinue);
+  document.getElementById("howtoBack").addEventListener("click", (e)=>{
+    if(e.target.id==="howtoBack") closeHowtoAndContinue();
+  });
 
   // Welcome add team
   document.getElementById("welcomeAddTeamBtn").addEventListener("click", addTeam);
@@ -1652,21 +1670,22 @@
     const meta = currentTeamMeta();
     meta.name = teamState.teamName || meta.name;
     saveAll();
-    renderAll();
+    renderScores();
+    renderRoundSeg();
   });
 
   // Game fields
   document.getElementById("opponent").addEventListener("input", e=>{
     currentGame().opponent = e.target.value;
-    saveAll(); renderAll();
+    saveAll(); renderScores(); renderPeriodTable(); renderRoundSeg();
   });
   document.getElementById("roundName").addEventListener("input", e=>{
     currentGame().roundName = e.target.value;
-    saveAll(); renderAll();
+    saveAll(); renderRoundSeg();
   });
   document.getElementById("gameDate").addEventListener("input", e=>{
     currentGame().gameDate = e.target.value;
-    saveAll(); renderAll();
+    saveAll(); renderRoundSeg();
   });
   document.getElementById("notes").addEventListener("input", e=>{
     currentGame().notes = e.target.value;
@@ -1744,11 +1763,15 @@
   }
   ensureIntegrityAll();
 
-  initRollups();     // add collapse arrows (keeps headings)
-  renderAll();       // render UI
+  initRollups();   // arrows (left) + collapse behaviour
+  renderAll();     // render UI
 
-  if(!hasSeenHowto()) openHowto();   // first run how-to
-  if(!hasTeams()) openTeamModal();   // first run: prompt to create team
+  // SHOW HOW-TO FIRST, THEN TEAM MODAL
+  if(!hasSeenHowto()){
+    openHowto();
+  } else if(!hasTeams()){
+    openTeamModal();
+  }
 </script>
 </body>
 </html>
