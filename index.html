@@ -212,8 +212,6 @@
         <div style="font-weight:950;margin-bottom:6px;">Players (for this team)</div>
         <div class="muted">Add/remove players if your team list isn’t 10.</div>
       </div>
-
-      <!-- NEW: add player button next to player box heading -->
       <button class="primary small" id="addPlayerBtn">+ Player</button>
     </div>
 
@@ -343,7 +341,6 @@
   <section class="card" id="summaryCard">
     <div class="row">
       <div class="grow" style="font-weight:950;">Period Summary (this game)</div>
-      <!-- REMOVED: Copy Rotations button -->
     </div>
     <div style="height:10px"></div>
     <div id="periodTableWrap"></div>
@@ -457,6 +454,18 @@
         </div>
       </div>
 
+      <div style="height:12px"></div>
+
+      <!-- IMPORT PLAYERS (OPTIONAL) -->
+      <div class="row">
+        <div class="grow">
+          <div class="muted">Import players from (optional)</div>
+          <select id="importPlayersSource"></select>
+        </div>
+        <button class="ghost small" id="importPlayersBtn" type="button">Import Players</button>
+      </div>
+      <div class="muted" id="importPlayersStatus" style="margin-top:6px;"></div>
+
       <div class="row" style="margin-top:10px;">
         <button class="primary" id="teamCreateBtn">Create Team</button>
       </div>
@@ -476,8 +485,11 @@
   const TOURN_DEFAULT  = 8;
   const LEAGUE_DEFAULT = 10;
 
-  const MIN_PLAYERS = 7;   // must have at least 7 to fill court
-  const MAX_PLAYERS = 15;  // safety cap
+  const MIN_PLAYERS = 7;    // must have at least 7 to fill court
+  const MAX_PLAYERS = 15;   // your max
+
+  // NEW TEAM import buffer
+  let pendingImportedPlayers = null; // array of {name}
 
   function safeJSONParse(raw){ try { return raw ? JSON.parse(raw) : null; } catch { return null; } }
   function loadTeamsIndex(){ return safeJSONParse(localStorage.getItem(TEAMS_INDEX_KEY)); }
@@ -581,6 +593,9 @@
     if(!Array.isArray(teamState.players) || teamState.players.length < MIN_PLAYERS){
       teamState.players = newPlayers10();
     }
+    if(teamState.players.length > MAX_PLAYERS){
+      teamState.players = teamState.players.slice(0, MAX_PLAYERS);
+    }
 
     if(!teamState.format) teamState.format = currentTeamMeta().format || "quarters";
 
@@ -679,7 +694,7 @@
   function canStartOT(game){ return game.gameEnded && isDraw(game) && (game.otCount || 0) === 0; }
   function clamp0(n){ return Math.max(0, n); }
 
-  /* ===== NEW: ADD / REMOVE PLAYERS ===== */
+  /* ===== ADD / REMOVE PLAYERS ===== */
   function clearPlayerFromAssignments(pid){
     for(const g of teamState.games){
       for(const per of g.periods){
@@ -698,7 +713,6 @@
     const p = { id: crypto.randomUUID(), name: `Player ${nextNum}` };
     teamState.players.push(p);
 
-    // Ensure each game has stats entry
     for(const g of teamState.games){
       if(!g.playerStats) g.playerStats = {};
       g.playerStats[p.id] = { goalsTotal:0, goalsByP:Array.from({length:6}, ()=>0) };
@@ -719,16 +733,12 @@
     const ok = confirm(`Remove ${name} from this team?\n\nThis will also remove them from all on-court selections.`);
     if(!ok) return;
 
-    // Remove from assignments in all games/periods
     clearPlayerFromAssignments(pid);
 
-    // Remove stats entries (game history for that player will no longer display)
     for(const g of teamState.games){
       if(g.playerStats) delete g.playerStats[pid];
-      // Note: goal log events referencing this pid will show as Unknown (safe)
     }
 
-    // Remove from player list
     teamState.players = teamState.players.filter(x => x.id !== pid);
 
     saveAll();
@@ -1079,12 +1089,17 @@
     renderAll();
   }
 
-  function openTeamModal(){ document.getElementById("teamBack").style.display = "flex"; }
+  function openTeamModal(){
+    pendingImportedPlayers = null;
+    document.getElementById("newTeamName").value = "";
+    document.getElementById("importPlayersStatus").textContent = "";
+    populateImportPlayersDropdown();
+    document.getElementById("teamBack").style.display = "flex";
+  }
   function closeTeamModal(){ document.getElementById("teamBack").style.display = "none"; }
+
   function openSyncModal(){ document.getElementById("syncBack").style.display = "flex"; }
   function closeSyncModal(){ document.getElementById("syncBack").style.display = "none"; }
-
-  function addTeam(){ openTeamModal(); }
 
   function createTeamFromModal(){
     const name = (document.getElementById("newTeamName").value || "").trim() || `Team ${teamsIndex.teams.length+1}`;
@@ -1095,9 +1110,34 @@
     teamsIndex.currentTeamId = id;
     saveTeamsIndex(teamsIndex);
 
-    teamState = defaultTeamState(format);
-    teamState.teamName = name;
+    // Use imported names if available (up to MAX_PLAYERS)
+    let players;
+    if(pendingImportedPlayers && pendingImportedPlayers.length){
+      players = pendingImportedPlayers.slice(0, MAX_PLAYERS).map((p,i)=>({
+        id: crypto.randomUUID(),
+        name: p.name || `Player ${i+1}`
+      }));
+    } else {
+      players = newPlayers10();
+    }
+
+    // Ensure minimum 7
+    while(players.length < MIN_PLAYERS){
+      players.push({ id: crypto.randomUUID(), name: `Player ${players.length+1}` });
+    }
+
+    const newTeamState = {
+      teamName: name,
+      format,
+      players,
+      games: [newEmptyGame(1, players, format)],
+      currentGameIndex: 0
+    };
+
+    teamState = newTeamState;
     saveTeamState(id, teamState);
+
+    pendingImportedPlayers = null;
 
     closeTeamModal();
     ensureIntegrityAll();
@@ -1168,6 +1208,67 @@
     stopTimerLoop();
     saveAll();
     renderAll();
+  }
+
+  /* =======================
+     IMPORT PLAYERS (ADD TEAM MODAL)
+  ======================= */
+  function populateImportPlayersDropdown(){
+    const sel = document.getElementById("importPlayersSource");
+    if(!sel) return;
+    sel.innerHTML = "";
+
+    if(!teamsIndex?.teams?.length){
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "No teams available";
+      sel.appendChild(opt);
+      sel.disabled = true;
+      return;
+    }
+
+    const optBlank = document.createElement("option");
+    optBlank.value = "";
+    optBlank.textContent = "— Select a team —";
+    sel.appendChild(optBlank);
+
+    teamsIndex.teams.forEach(t=>{
+      const opt = document.createElement("option");
+      opt.value = t.id;
+      opt.textContent = t.name || "Unnamed team";
+      sel.appendChild(opt);
+    });
+
+    sel.disabled = false;
+  }
+
+  function importPlayersIntoNewTeam(){
+    const sel = document.getElementById("importPlayersSource");
+    const status = document.getElementById("importPlayersStatus");
+    const teamId = sel?.value;
+
+    if(!teamId) return alert("Pick a team to import players from.");
+
+    const src = loadTeamState(teamId);
+    if(!src?.players?.length) return alert("That team has no players saved.");
+
+    // Import ALL names (but your declared MAX_PLAYERS is 15)
+    let names = src.players
+      .map(p => ({ name: (p.name || "").trim() }))
+      .filter(p => p.name.length > 0);
+
+    if(names.length > MAX_PLAYERS){
+      alert(`That team has ${names.length} players. This app is set to max ${MAX_PLAYERS}, so only the first ${MAX_PLAYERS} will be imported.`);
+      names = names.slice(0, MAX_PLAYERS);
+    }
+
+    pendingImportedPlayers = names;
+
+    while(pendingImportedPlayers.length < MIN_PLAYERS){
+      pendingImportedPlayers.push({ name: `Player ${pendingImportedPlayers.length + 1}` });
+    }
+
+    status.textContent = `Imported ${pendingImportedPlayers.length} players (will be used for new team).`;
   }
 
   /* =======================
@@ -1342,7 +1443,7 @@
         p.name = e.target.value;
         saveAll();
 
-        // Update only what needs names (no full rebuild)
+        // IMPORTANT: do NOT rebuild player inputs on each keystroke
         renderPositions();
         renderScores();
         renderStats();
@@ -1717,6 +1818,9 @@
   document.getElementById("teamCreateBtn").addEventListener("click", createTeamFromModal);
   document.getElementById("teamBack").addEventListener("click", (e)=>{ if(e.target.id==="teamBack") closeTeamModal(); });
 
+  // import players inside Add Team modal
+  document.getElementById("importPlayersBtn").addEventListener("click", importPlayersIntoNewTeam);
+
   document.getElementById("deleteTeamBtn").addEventListener("click", deleteCurrentTeam);
 
   document.getElementById("teamName").addEventListener("input", e=>{
@@ -1726,6 +1830,7 @@
     saveAll();
     renderScores();
     renderRoundSeg();
+    renderTeamTabs();
   });
 
   document.getElementById("opponent").addEventListener("input", e=>{
@@ -1799,7 +1904,6 @@
   document.getElementById("syncImport").addEventListener("click", importTeam);
   document.getElementById("syncClear").addEventListener("click", ()=>{ document.getElementById("syncText").value=""; });
 
-  // NEW: Add player button
   document.getElementById("addPlayerBtn").addEventListener("click", addPlayer);
 
   /* =======================
