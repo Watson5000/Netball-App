@@ -4,29 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#111111" />
-
-  <!-- iOS / Safari "app" settings -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Bench Boss">
-
-  <!-- Icons -->
-  <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="icon" type="image/png" href="favicon.png">
-
-  <!-- PWA -->
   <link rel="manifest" href="manifest.json">
-
   <title>Bench Boss: Netball</title>
+
+  <!-- Favicons / iOS -->
+  <link rel="icon" href="favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
   <style>
     :root { --pad: 12px; --r: 14px; --b: 1px solid #ddd; }
+    body { margin:0; font-family:-apple-system,system-ui,Segoe UI,Roboto,Arial; background:#f6f6f6; }
 
-    body { margin:0; font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial; background:#f6f6f6; }
-
-    /* =========================
-       Catchy brand header
-    ========================== */
     header{
       padding: calc(var(--pad) + 2px);
       color:#fff;
@@ -36,87 +24,68 @@
       border-bottom: 1px solid rgba(255,255,255,.10);
       box-shadow: 0 10px 24px rgba(0,0,0,.18);
     }
-    header h1{
-      margin:0;
-      font-size:18px;
-      letter-spacing:.2px;
-    }
+    header h1{margin:0;font-size:18px;letter-spacing:.2px;}
     .brandRow{display:flex;align-items:center;gap:12px;min-width:0;}
     .brandLogo{
-      width:40px;height:40px;border-radius:12px;
-      object-fit:cover;
+      width:40px;height:40px;border-radius:12px;object-fit:cover;
       background:rgba(255,255,255,.10);
       border:1px solid rgba(255,255,255,.18);
-      box-shadow: 0 6px 14px rgba(0,0,0,.25);
+      box-shadow:0 6px 14px rgba(0,0,0,.25);
     }
     .brandTitle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
     .badge{
-      font-size:11px;
-      padding:4px 8px;
-      border-radius:999px;
-      background: rgba(255,255,255,.12);
-      border: 1px solid rgba(255,255,255,.16);
-      font-weight:950;
-      letter-spacing:.2px;
+      font-size:11px;padding:4px 8px;border-radius:999px;
+      background:rgba(255,255,255,.12);
+      border:1px solid rgba(255,255,255,.16);
+      font-weight:950;letter-spacing:.2px;
     }
     header .sub{
-      opacity:.92;
-      font-size:12px;
-      margin-top:6px;
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
+      opacity:.92;font-size:12px;margin-top:6px;
+      display:flex;gap:10px;flex-wrap:wrap;align-items:center;
     }
     header .sub .dot{opacity:.6;}
     header .sub .byline{opacity:.85;font-weight:800;}
 
-    /* Make the How-to button fit the header */
     #howtoBtn{
       border-color: rgba(255,255,255,.25) !important;
       color:#fff !important;
       background: rgba(255,255,255,.10) !important;
       backdrop-filter: blur(6px);
     }
-    #howtoBtn:hover{ background: rgba(255,255,255,.14) !important; }
 
-    /* =========================
-       Main UI
-    ========================== */
-    main { padding: var(--pad); display:grid; gap: var(--pad); }
-    .card { background:#fff; border: var(--b); border-radius: var(--r); padding: var(--pad); }
-    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .grow { flex:1; }
-    .seg { display:flex; gap:8px; flex-wrap:wrap; }
-    .seg button { border: var(--b); background:#fff; padding:10px 12px; border-radius: 999px; font-weight:900; }
+    main{padding:var(--pad);display:grid;gap:var(--pad);}
+    .card{background:#fff;border:var(--b);border-radius:var(--r);padding:var(--pad);}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+    .grow{flex:1;}
+    .seg{display:flex;gap:8px;flex-wrap:wrap;}
+    .seg button{border:var(--b);background:#fff;padding:10px 12px;border-radius:999px;font-weight:950;}
     .seg button.active{
-      background:#111; color:#fff; border-color:#111;
-      box-shadow: 0 0 0 4px rgba(0,0,0,0.12);
-      transform: scale(1.04);
+      background:#111;color:#fff;border-color:#111;
+      box-shadow:0 0 0 4px rgba(0,0,0,.12);
+      transform:scale(1.04);
     }
-    button.primary { background:#111; color:#fff; border:1px solid #111; border-radius: 12px; padding:12px 14px; font-weight:950; }
-    button.ghost { background:#fff; border: var(--b); border-radius: 12px; padding:12px 14px; font-weight:950; }
-    button.small { padding:8px 10px; border-radius:10px; font-weight:950; }
-    button.danger { border-color:#c62828; color:#c62828; }
-    select, input[type="text"], input[type="date"] { border: var(--b); border-radius: 12px; padding:10px 12px; font-size:16px; background:#fff; }
-    textarea { width:100%; min-height:70px; border: var(--b); border-radius: 12px; padding:10px 12px; font-size:16px; background:#fff; }
-    .grid7 { display:grid; grid-template-columns: 1fr; gap:10px; }
-    @media (min-width: 780px) { .grid7 { grid-template-columns: 1fr 1fr; } }
-    .posRow { display:flex; gap:10px; align-items:center; }
-    .posTag { width:54px; min-width:54px; text-align:center; padding:8px 0; border-radius:10px; background:#f0f0f0; border: var(--b); font-weight:950; }
-    .muted { color:#666; font-size:13px; }
-    .list { display:grid; gap:8px; }
-    .pill { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border: var(--b); border-radius: 12px; background:#fff; gap:10px; }
-    .right { text-align:right; }
-    .kbd { font-family: ui-monospace, Menlo, monospace; font-size:12px; padding:2px 6px; border-radius:8px; background:#eee; border:1px solid #ddd; }
-    table { width:100%; border-collapse:collapse; }
-    th, td { border: var(--b); padding:8px 10px; text-align:left; }
-    th { background:#fafafa; }
-    details summary { cursor:pointer; font-weight:950; }
-    .warn { padding:10px 12px; border-radius:12px; border:1px solid #ffe082; background:#fff8e1; }
-    .scoreBig { font-size:40px; font-weight:950; line-height:1; }
+    button.primary{background:#111;color:#fff;border:1px solid #111;border-radius:12px;padding:12px 14px;font-weight:950;}
+    button.ghost{background:#fff;border:var(--b);border-radius:12px;padding:12px 14px;font-weight:950;}
+    button.small{padding:8px 10px;border-radius:10px;font-weight:950;}
+    button.danger{border-color:#c62828;color:#c62828;}
+    select,input[type="text"],input[type="date"]{border:var(--b);border-radius:12px;padding:10px 12px;font-size:16px;background:#fff;}
+    textarea{width:100%;min-height:70px;border:var(--b);border-radius:12px;padding:10px 12px;font-size:16px;background:#fff;}
+    .grid7{display:grid;grid-template-columns:1fr;gap:10px;}
+    @media (min-width:780px){.grid7{grid-template-columns:1fr 1fr;}}
+    .posRow{display:flex;gap:10px;align-items:center;}
+    .posTag{width:54px;min-width:54px;text-align:center;padding:8px 0;border-radius:10px;background:#f0f0f0;border:var(--b);font-weight:950;}
+    .muted{color:#666;font-size:13px;}
+    .list{display:grid;gap:8px;}
+    .pill{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border:var(--b);border-radius:12px;background:#fff;gap:10px;}
+    .right{text-align:right;}
+    .kbd{font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:2px 6px;border-radius:8px;background:#eee;border:1px solid #ddd;}
+    table{width:100%;border-collapse:collapse;}
+    th,td{border:var(--b);padding:8px 10px;text-align:left;}
+    th{background:#fafafa;}
+    details summary{cursor:pointer;font-weight:950;}
+    .warn{padding:10px 12px;border-radius:12px;border:1px solid #ffe082;background:#fff8e1;}
+    .scoreBig{font-size:40px;font-weight:950;line-height:1;}
 
-    /* Modal */
     .modalBack{
       position:fixed; inset:0;
       background:rgba(0,0,0,.45);
@@ -124,20 +93,15 @@
       padding:16px; z-index:9999;
     }
     .modal{
-      width:min(760px, 100%);
+      width:min(820px, 100%);
       background:#fff;
       border:1px solid #ddd;
       border-radius:16px;
       padding:14px;
     }
     .modal h3{margin:0 0 6px 0}
-    .modal textarea{
-      min-height:160px;
-      font-family:ui-monospace, Menlo, monospace;
-      font-size:12px;
-    }
+    .modal textarea{min-height:160px;font-family:ui-monospace,Menlo,monospace;font-size:12px;}
 
-    /* FINAL banner */
     .finalBanner{
       display:none;
       padding:12px 14px;
@@ -153,7 +117,6 @@
     .finalBanner .small{ font-size:12px; font-weight:900; opacity:.85; }
     .finalBanner .big{ font-size:18px; font-weight:950; margin-top:4px; }
 
-    /* Roll-up */
     .rollBtn{
       border:1px solid #ddd;
       background:#fff;
@@ -165,7 +128,6 @@
     }
     .card.collapsed .rollBody{ display:none; }
 
-    /* Player remove */
     .miniDanger{
       border:1px solid #c62828;
       color:#c62828;
@@ -189,7 +151,7 @@
           <span class="badge">BETA</span>
         </div>
         <div class="sub">
-          <span>Rotations • scoring • timer • OT</span>
+          <span>Competition • teams • games • rotations • OT</span>
           <span class="dot">•</span>
           <span class="byline">Designed by Matt Watson</span>
           <span id="saveState" class="muted"></span>
@@ -206,23 +168,44 @@
   <section class="card" id="welcomeCard">
     <div style="font-weight:950; font-size:18px;">Welcome 👋</div>
     <div class="muted" style="margin-top:6px;">
-      To begin, tap <b>+ Add Team</b>.<br>
-      Choose <b>4 quarters</b> (league) or <b>2 halves</b> (tournament).<br>
-      Switch teams using the tabs.
+      This version uses <b>Competition → Team → Games</b>.<br>
+      Start by adding a <b>Competition</b> (Parkville, Tournament, Practice), then add your team(s) under it.
     </div>
     <div style="height:10px"></div>
-    <button class="primary" id="welcomeAddTeamBtn">+ Add Team</button>
+    <button class="primary" id="welcomeAddCompBtn">+ Add Competition</button>
   </section>
 
-  <!-- TEAM TABS + GAME HEADER -->
+  <!-- TOP: COMP + TEAM + GAME -->
   <section class="card" id="topCard">
     <div class="row">
       <div class="grow">
-        <div class="muted">Teams</div>
+        <div class="muted">Competitions</div>
+        <div class="seg" id="compSeg"></div>
+      </div>
+      <button class="primary small" id="addCompBtn">+ Add Comp</button>
+      <button class="ghost small danger" id="deleteCompBtn">Delete Comp</button>
+    </div>
+
+    <div style="height:12px"></div>
+
+    <div class="row">
+      <div class="grow">
+        <div class="muted">Competition name</div>
+        <input id="compName" type="text" placeholder="e.g. Parkville Winter 2026" />
+      </div>
+
+      <div class="grow">
+        <div class="muted">Format (this competition)</div>
+        <div style="font-weight:950; font-size:16px;"><span id="formatLabel">4 quarters</span></div>
+      </div>
+
+      <div class="grow">
+        <div class="muted">Teams (in this comp)</div>
         <div class="seg" id="teamSeg"></div>
       </div>
+
       <button class="primary small" id="addTeamBtn">+ Add Team</button>
-      <button class="ghost small danger" id="deleteTeamBtn" title="Delete current team">Delete Team</button>
+      <button class="ghost small danger" id="deleteTeamBtn">Delete Team</button>
     </div>
 
     <div style="height:12px"></div>
@@ -231,13 +214,6 @@
       <div class="grow">
         <div class="muted">Team name</div>
         <input id="teamName" type="text" placeholder="e.g. Tigers U15" />
-      </div>
-
-      <div class="grow">
-        <div class="muted">Format</div>
-        <div style="font-weight:950; font-size:16px;">
-          <span id="formatLabel">4 quarters</span>
-        </div>
       </div>
 
       <div class="grow">
@@ -250,7 +226,7 @@
       <button class="ghost small" id="prevGameBtn">◀ Prev</button>
       <button class="ghost small" id="nextGameBtn">Next ▶</button>
       <button class="primary small" id="addGameBtn">+ Add Game</button>
-      <button class="ghost small danger" id="resetTeamBtn" title="Reset current team season">Reset Team</button>
+      <button class="ghost small danger" id="resetTeamBtn" title="Reset this team (players + games)">Reset Team</button>
     </div>
 
     <div class="row" style="margin-top:10px;">
@@ -276,8 +252,7 @@
       <div class="row">
         <button class="ghost small" id="newGameBtn" title="Reset this game only">Reset This Game</button>
         <button class="ghost small" id="copySummaryBtn">Copy Game Summary</button>
-        <button class="ghost small" id="copySeasonBtn">Copy Season Summary</button>
-        <button class="primary small" id="syncBtn">Sync</button>
+        <button class="ghost small" id="syncBtn">Sync</button>
       </div>
     </div>
   </section>
@@ -287,11 +262,10 @@
     <div class="row">
       <div class="grow">
         <div style="font-weight:950;margin-bottom:6px;">Players (for this team)</div>
-        <div class="muted">Add/remove players if your team list isn’t 10.</div>
+        <div class="muted">Add/remove up to 15. Minimum 7.</div>
       </div>
       <button class="primary small" id="addPlayerBtn">+ Player</button>
     </div>
-
     <div style="height:10px"></div>
     <div class="row" id="playersInputs" style="display:grid; grid-template-columns: 1fr; gap:10px;"></div>
   </section>
@@ -401,7 +375,7 @@
   <section class="card" id="statsCard">
     <div class="row">
       <div class="grow" style="font-weight:950;">Stats</div>
-      <div class="muted">This game + team season totals</div>
+      <div class="muted">This game</div>
     </div>
     <div style="height:12px"></div>
     <div class="list" id="statsList"></div>
@@ -414,7 +388,7 @@
     </details>
   </section>
 
-  <!-- PERIOD SUMMARY -->
+  <!-- SUMMARY -->
   <section class="card" id="summaryCard">
     <div class="row">
       <div class="grow" style="font-weight:950;">Period Summary (this game)</div>
@@ -449,7 +423,12 @@
       </div>
 
       <div class="muted">
-        <div style="font-weight:950; color:#111; margin:10px 0 6px;">Editing vs Live</div>
+        <div style="font-weight:950; color:#111; margin:10px 0 6px;">Competition → Team → Games</div>
+        <div>• Create a <b>Competition</b> (Parkville / Tournament / Practice).</div>
+        <div>• Add one or more <b>Teams</b> under that competition.</div>
+        <div>• Each team has its own <b>Games</b>.</div>
+
+        <div style="font-weight:950; color:#111; margin:12px 0 6px;">Editing vs Live</div>
         <div>• <b>Editing</b> period = set on-court positions + bench plan.</div>
         <div>• <b>Live</b> period = where scoring + undo applies.</div>
         <div>• Use <b>Set live = editing</b> to align them.</div>
@@ -457,15 +436,15 @@
         <div style="font-weight:950; color:#111; margin:12px 0 6px;">Bench planning</div>
         <div>• Choose each bench player’s <b>Next</b> position.</div>
         <div>• Tap <b>Sub In</b> to put them straight into that position.</div>
-        <div>• Court time is shown everywhere. It’s <b>inferred from your plan</b> until you use <b>Sub In</b>, then it can switch to <b>0.5</b>.</div>
+        <div>• Court time is inferred from your plan until you <b>Sub In</b>, then it can become <b>0.5</b> for that period.</div>
 
-        <div style="font-weight:950; color:#111; margin:12px 0 6px;">Scoring</div>
-        <div>• <b>Home/Away +1</b> adds a goal to the <b>Live</b> period.</div>
-        <div>• <b>+GS / +GA</b> credits the player assigned to GS/GA in the <b>Live</b> period.</div>
+        <div style="font-weight:950; color:#111; margin:12px 0 6px;">Timer + halftime alert</div>
+        <div>• League mode (quarters) can optionally alert at halfway (“Make a change”).</div>
+        <div>• Halves mode does <b>not</b> show the halfway alert.</div>
 
         <div style="font-weight:950; color:#111; margin:12px 0 6px;">Overtime</div>
-        <div>• If tied at end, start <b>OT</b> → this app plays <b>OT1 and OT2 always</b>.</div>
-        <div>• In <b>OT2</b>, if time hits 0 and still tied → flips to <b>play-on</b> until a team leads by <b>2</b> (auto-end).</div>
+        <div>• If tied at end → <b>Start OT</b> (always plays <b>OT1 and OT2</b>).</div>
+        <div>• In OT2, if time hits 0 and still tied → flips to <b>play-on</b> until a team leads by <b>2</b> (auto-end).</div>
         <div>• Use <b>Re-open game</b> if you ended by mistake.</div>
       </div>
 
@@ -477,15 +456,15 @@
     </div>
   </div>
 
-  <!-- SYNC MODAL -->
+  <!-- SYNC MODAL (TEAM EXPORT/IMPORT) -->
   <div class="modalBack" id="syncBack">
     <div class="modal">
       <div class="row">
-        <h3 class="grow">Sync (Export / Import)</h3>
+        <h3 class="grow">Sync (Export / Import) – This Team</h3>
         <button class="ghost small" id="syncClose">Close</button>
       </div>
       <div class="muted">
-        Export on one device, import on the other. <b>Import replaces</b> this team on this device.
+        Export on one device, import on the other. <b>Import replaces</b> this team in this competition on this device.
       </div>
       <div style="height:10px"></div>
       <textarea id="syncText" placeholder="Export appears here. Import: paste exported text here…"></textarea>
@@ -498,18 +477,18 @@
     </div>
   </div>
 
-  <!-- ADD TEAM MODAL -->
-  <div class="modalBack" id="teamBack">
+  <!-- ADD COMP MODAL -->
+  <div class="modalBack" id="compBack">
     <div class="modal">
       <div class="row">
-        <h3 class="grow">Add Team</h3>
-        <button class="ghost small" id="teamClose">Close</button>
+        <h3 class="grow">Add Competition</h3>
+        <button class="ghost small" id="compClose">Close</button>
       </div>
 
       <div class="row">
         <div class="grow">
-          <div class="muted">Team name</div>
-          <input id="newTeamName" type="text" placeholder="e.g. Tigers U15 / Tournament Squad" />
+          <div class="muted">Competition name</div>
+          <input id="newCompName" type="text" placeholder="e.g. Parkville Winter 2026 / State Titles" />
         </div>
       </div>
 
@@ -519,11 +498,11 @@
         <div class="grow">
           <div class="muted">Format</div>
           <label style="display:flex;align-items:center;gap:8px;margin:8px 0;">
-            <input type="radio" name="newFormat" value="quarters" checked />
+            <input type="radio" name="newCompFormat" value="quarters" checked />
             <span><b>4 quarters</b> (league)</span>
           </label>
           <label style="display:flex;align-items:center;gap:8px;margin:8px 0;">
-            <input type="radio" name="newFormat" value="halves" />
+            <input type="radio" name="newCompFormat" value="halves" />
             <span><b>2 halves</b> (tournament)</span>
           </label>
           <div class="muted">Tournament default <b>8 min</b>. League default <b>10 min</b>. OT default <b>3 min</b>.</div>
@@ -531,8 +510,27 @@
       </div>
 
       <div style="height:12px"></div>
+      <button class="primary" id="compCreateBtn">Create Competition</button>
+    </div>
+  </div>
 
-      <!-- IMPORT PLAYERS -->
+  <!-- ADD TEAM MODAL -->
+  <div class="modalBack" id="teamBack">
+    <div class="modal">
+      <div class="row">
+        <h3 class="grow">Add Team (under this competition)</h3>
+        <button class="ghost small" id="teamClose">Close</button>
+      </div>
+
+      <div class="row">
+        <div class="grow">
+          <div class="muted">Team name</div>
+          <input id="newTeamName" type="text" placeholder="e.g. Tigers U15 / Tigers A" />
+        </div>
+      </div>
+
+      <div style="height:12px"></div>
+
       <div class="row">
         <div class="grow">
           <div class="muted">Import players from (optional)</div>
@@ -542,21 +540,28 @@
       </div>
       <div class="muted" id="importPlayersStatus" style="margin-top:6px;"></div>
 
-      <div class="row" style="margin-top:10px;">
-        <button class="primary" id="teamCreateBtn">Create Team</button>
-      </div>
+      <div style="height:12px"></div>
+      <button class="primary" id="teamCreateBtn">Create Team</button>
     </div>
   </div>
 </main>
 
 <script>
-  const TEAMS_INDEX_KEY = "netball_teams_index_v3_notdefault";
-  const TEAM_KEY_PREFIX = "netball_team_v3_";
-  const HOWTO_FLAG_KEY  = "netball_howto_seen_v1";
+  /* ===============================
+     STORAGE + CONSTANTS
+  =============================== */
+  const APP_KEY = "bb_competitions_v1";
+  const HOWTO_FLAG_KEY = "bb_howto_seen_v1";
+
+  // Legacy keys (if you ever want to migrate from your previous build)
+  const LEGACY_TEAMS_INDEX_KEY = "netball_teams_index_v3_notdefault";
+  const LEGACY_TEAM_KEY_PREFIX = "netball_team_v3_";
+
   const POSITIONS = ["GS","GA","WA","C","WD","GD","GK"];
 
   const LEAGUE_MINUTES = [10,12,15];
   const TOURN_MINUTES  = [5,6,7,8,9,10];
+
   const OT_DEFAULT     = 3;
   const TOURN_DEFAULT  = 8;
   const LEAGUE_DEFAULT = 10;
@@ -567,24 +572,19 @@
   let pendingImportedPlayers = null;
 
   function safeJSONParse(raw){ try { return raw ? JSON.parse(raw) : null; } catch { return null; } }
-  function loadTeamsIndex(){ return safeJSONParse(localStorage.getItem(TEAMS_INDEX_KEY)); }
-  function saveTeamsIndex(idx){ localStorage.setItem(TEAMS_INDEX_KEY, JSON.stringify(idx)); }
-  function teamStorageKey(teamId){ return TEAM_KEY_PREFIX + teamId; }
-  function loadTeamState(teamId){ return safeJSONParse(localStorage.getItem(teamStorageKey(teamId))); }
-  function saveTeamState(teamId, teamState){ localStorage.setItem(teamStorageKey(teamId), JSON.stringify(teamState)); }
 
-  function defaultIndexIfMissing(){
-    const idx = { teams: [], currentTeamId: null };
-    saveTeamsIndex(idx);
-    return idx;
+  function loadApp(){ return safeJSONParse(localStorage.getItem(APP_KEY)); }
+  function saveApp(app){ localStorage.setItem(APP_KEY, JSON.stringify(app)); }
+
+  function markSaved(){
+    const el = document.getElementById("saveState");
+    el.textContent = "Saved ✓";
+    setTimeout(()=> el.textContent = "", 700);
   }
 
-  let teamsIndex = loadTeamsIndex() || defaultIndexIfMissing();
-  let teamState = null;
-
-  function hasTeams(){ return Array.isArray(teamsIndex?.teams) && teamsIndex.teams.length > 0; }
-  function currentTeamMeta(){ return teamsIndex.teams.find(t=>t.id===teamsIndex.currentTeamId) || teamsIndex.teams[0]; }
-
+  /* ===============================
+     DATA MODEL (Competition → Team → Games)
+  =============================== */
   function newPlayers10(){
     return Array.from({length:10}, (_,i)=>({ id: crypto.randomUUID(), name: `Player ${i+1}` }));
   }
@@ -626,152 +626,217 @@
       timerMode: "countdown",
       timerExtraElapsed: 0,
 
+      // halftime alert (quarters only) — per period, one-time
+      halfWarned: {},
+
       periods: Array.from({length:baseP}, ()=>emptyPeriod()),
       playerStats: initPlayerStats(players),
 
       plannedPositions: {},
-
-      // playCredits[pIdx][playerId] = 0.5 when you use "Sub In"
-      playCredits: {}
+      playCredits: {} // playCredits[pIdx][playerId] = 0.5 when Sub In
     };
   }
 
-  function defaultTeamState(format){
+  function newTeam(teamName){
     const players = newPlayers10();
     return {
-      teamName: "",
-      format: format,
+      id: crypto.randomUUID(),
+      name: teamName || "Team",
       players,
-      games: [newEmptyGame(1, players, format)],
+      games: [newEmptyGame(1, players, "quarters")],
       currentGameIndex: 0
     };
   }
 
-  function ensureIntegrityAll(){
-    if(!teamsIndex || !Array.isArray(teamsIndex.teams)){
-      teamsIndex = { teams: [], currentTeamId: null };
-      saveTeamsIndex(teamsIndex);
+  function newCompetition(name, format){
+    const compFormat = format || "quarters";
+    const comp = {
+      id: crypto.randomUUID(),
+      name: name || "Competition",
+      format: compFormat,
+      teams: [],
+      currentTeamId: null
+    };
+    return comp;
+  }
+
+  function defaultApp(){
+    return { competitions: [], currentCompId: null };
+  }
+
+  let app = loadApp() || defaultApp();
+
+  /* ===============================
+     LEGACY MIGRATION (best-effort)
+     - If you still have old data from the earlier "teams" version, we move it into competitions
+     - Grouped by format into "Imported (quarters)" / "Imported (halves)"
+  =============================== */
+  function tryLegacyMigration(){
+    if(app.competitions?.length) return;
+
+    const legacyIdx = safeJSONParse(localStorage.getItem(LEGACY_TEAMS_INDEX_KEY));
+    if(!legacyIdx?.teams?.length) return;
+
+    const grouped = { quarters: [], halves: [] };
+    for(const meta of legacyIdx.teams){
+      const raw = safeJSONParse(localStorage.getItem(LEGACY_TEAM_KEY_PREFIX + meta.id));
+      if(!raw) continue;
+
+      const fmt = (raw.format === "halves") ? "halves" : "quarters";
+      const team = {
+        id: crypto.randomUUID(),
+        name: meta.name || raw.teamName || "Imported Team",
+        players: raw.players || newPlayers10(),
+        games: raw.games || [newEmptyGame(1, raw.players || newPlayers10(), fmt)],
+        currentGameIndex: raw.currentGameIndex || 0
+      };
+      grouped[fmt].push(team);
     }
 
-    if(!hasTeams()){
-      teamState = null;
-      teamsIndex.currentTeamId = null;
-      saveTeamsIndex(teamsIndex);
-      return;
+    const comps = [];
+    if(grouped.quarters.length){
+      const c = newCompetition("Imported (quarters)", "quarters");
+      c.teams = grouped.quarters;
+      c.currentTeamId = c.teams[0].id;
+      comps.push(c);
+    }
+    if(grouped.halves.length){
+      const c = newCompetition("Imported (halves)", "halves");
+      c.teams = grouped.halves;
+      c.currentTeamId = c.teams[0].id;
+      comps.push(c);
     }
 
-    if(!teamsIndex.currentTeamId) teamsIndex.currentTeamId = teamsIndex.teams[0].id;
-    if(!teamsIndex.teams.some(t=>t.id===teamsIndex.currentTeamId)){
-      teamsIndex.currentTeamId = teamsIndex.teams[0].id;
+    if(comps.length){
+      app.competitions = comps;
+      app.currentCompId = comps[0].id;
+      saveApp(app);
+    }
+  }
+
+  tryLegacyMigration();
+
+  /* ===============================
+     HELPERS / CURRENT POINTERS
+  =============================== */
+  function hasCompetitions(){ return Array.isArray(app.competitions) && app.competitions.length > 0; }
+  function currentCompetition(){
+    if(!hasCompetitions()) return null;
+    let c = app.competitions.find(x => x.id === app.currentCompId) || app.competitions[0];
+    if(!app.currentCompId) app.currentCompId = c.id;
+    return c;
+  }
+  function hasTeamsInComp(){
+    const c = currentCompetition();
+    return !!(c?.teams?.length);
+  }
+  function currentTeam(){
+    const c = currentCompetition();
+    if(!c?.teams?.length) return null;
+    let t = c.teams.find(x => x.id === c.currentTeamId) || c.teams[0];
+    if(!c.currentTeamId) c.currentTeamId = t.id;
+    return t;
+  }
+  function currentGame(){
+    const t = currentTeam();
+    if(!t) return null;
+    t.currentGameIndex = Math.max(0, Math.min(t.currentGameIndex || 0, (t.games?.length || 1) - 1));
+    return t.games[t.currentGameIndex];
+  }
+
+  function escapeHtml(str){ return (str||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function clamp0(n){ return Math.max(0, n); }
+
+  function ensureIntegrity(){
+    if(!app.competitions) app.competitions = [];
+    if(app.currentCompId && !app.competitions.some(c=>c.id===app.currentCompId)){
+      app.currentCompId = app.competitions[0]?.id || null;
     }
 
-    if(!teamState){
-      const meta = currentTeamMeta();
-      teamState = loadTeamState(teamsIndex.currentTeamId) || defaultTeamState(meta?.format || "quarters");
-    }
-
-    if(!Array.isArray(teamState.players) || teamState.players.length < MIN_PLAYERS){
-      teamState.players = newPlayers10();
-    }
-    if(teamState.players.length > MAX_PLAYERS){
-      teamState.players = teamState.players.slice(0, MAX_PLAYERS);
-    }
-
-    if(!teamState.format) teamState.format = currentTeamMeta().format || "quarters";
-
-    if(!Array.isArray(teamState.games) || teamState.games.length===0){
-      teamState.games = [newEmptyGame(1, teamState.players, teamState.format)];
-    }
-    if(teamState.currentGameIndex == null) teamState.currentGameIndex = 0;
-    teamState.currentGameIndex = Math.max(0, Math.min(teamState.currentGameIndex, teamState.games.length-1));
-
-    const meta = currentTeamMeta();
-    if(meta){
-      meta.format = teamState.format;
-      meta.name = teamState.teamName || meta.name;
-      saveTeamsIndex(teamsIndex);
-    }
-
-    for(const g of teamState.games){
-      if(g.roundName == null) g.roundName = "";
-      if(g.gameDate == null) g.gameDate = "";
-      if(g.notes == null) g.notes = "";
-      if(g.selectedP == null) g.selectedP = 0;
-      if(g.liveP == null) g.liveP = 0;
-
-      if(g.otCount == null) g.otCount = 0;
-      if(g.otMinutes == null) g.otMinutes = OT_DEFAULT;
-      if(g.gameEnded == null) g.gameEnded = false;
-
-      if(g.baseMinutes == null){
-        g.baseMinutes = (teamState.format==="halves") ? TOURN_DEFAULT : LEAGUE_DEFAULT;
+    for(const c of app.competitions){
+      if(!c.teams) c.teams = [];
+      if(!c.format) c.format = "quarters";
+      if(c.currentTeamId && !c.teams.some(t=>t.id===c.currentTeamId)){
+        c.currentTeamId = c.teams[0]?.id || null;
       }
-      if(g.timerRunning == null) g.timerRunning = false;
-      if(g.timerRemaining == null) g.timerRemaining = g.baseMinutes * 60;
-      if(g.timerLastTick == null) g.timerLastTick = 0;
-      if(g.timerMode == null) g.timerMode = "countdown";
-      if(g.timerExtraElapsed == null) g.timerExtraElapsed = 0;
 
-      if(!Array.isArray(g.periods)) g.periods = [];
-      const baseP = basePeriods(teamState.format);
-      while(g.periods.length < baseP) g.periods.push(emptyPeriod());
-      const needLen = baseP + (g.otCount || 0);
-      while(g.periods.length < needLen) g.periods.push(emptyPeriod());
+      for(const t of c.teams){
+        if(!t.players || t.players.length < MIN_PLAYERS) t.players = newPlayers10();
+        if(t.players.length > MAX_PLAYERS) t.players = t.players.slice(0, MAX_PLAYERS);
+        if(!t.games || !t.games.length) t.games = [newEmptyGame(1, t.players, c.format)];
+        if(t.currentGameIndex == null) t.currentGameIndex = 0;
+        t.currentGameIndex = Math.max(0, Math.min(t.currentGameIndex, t.games.length-1));
 
-      if(!g.playerStats) g.playerStats = {};
-      for(const p of teamState.players){
-        if(!g.playerStats[p.id]){
-          g.playerStats[p.id] = { goalsTotal:0, goalsByP:Array.from({length:6}, ()=>0) };
-        } else {
-          if(!Array.isArray(g.playerStats[p.id].goalsByP)) g.playerStats[p.id].goalsByP = Array.from({length:6}, ()=>0);
-          while(g.playerStats[p.id].goalsByP.length < 6) g.playerStats[p.id].goalsByP.push(0);
+        for(const g of t.games){
+          // ensure periods length matches format + OT
+          const baseP = basePeriods(c.format);
+          if(!Array.isArray(g.periods)) g.periods = [];
+          while(g.periods.length < baseP) g.periods.push(emptyPeriod());
+          const needLen = baseP + (g.otCount || 0);
+          while(g.periods.length < needLen) g.periods.push(emptyPeriod());
+
+          if(g.selectedP == null) g.selectedP = 0;
+          if(g.liveP == null) g.liveP = 0;
+
+          if(g.baseMinutes == null) g.baseMinutes = (c.format==="halves") ? TOURN_DEFAULT : LEAGUE_DEFAULT;
+          if(g.timerRunning == null) g.timerRunning = false;
+          if(g.timerRemaining == null) g.timerRemaining = g.baseMinutes * 60;
+          if(g.timerLastTick == null) g.timerLastTick = 0;
+          if(g.timerMode == null) g.timerMode = "countdown";
+          if(g.timerExtraElapsed == null) g.timerExtraElapsed = 0;
+          if(!g.halfWarned) g.halfWarned = {};
+
+          if(g.otMinutes == null) g.otMinutes = OT_DEFAULT;
+          if(g.gameEnded == null) g.gameEnded = false;
+
+          if(!g.playerStats) g.playerStats = {};
+          for(const p of t.players){
+            if(!g.playerStats[p.id]){
+              g.playerStats[p.id] = { goalsTotal:0, goalsByP:Array.from({length:6}, ()=>0) };
+            } else {
+              if(!Array.isArray(g.playerStats[p.id].goalsByP)) g.playerStats[p.id].goalsByP = Array.from({length:6}, ()=>0);
+              while(g.playerStats[p.id].goalsByP.length < 6) g.playerStats[p.id].goalsByP.push(0);
+            }
+          }
+          if(!g.plannedPositions) g.plannedPositions = {};
+          if(!g.playCredits) g.playCredits = {};
         }
       }
-
-      if(!g.plannedPositions) g.plannedPositions = {};
-      if(!g.playCredits) g.playCredits = {};
     }
   }
 
   function saveAll(){
-    ensureIntegrityAll();
-    saveTeamsIndex(teamsIndex);
-    if(hasTeams()) saveTeamState(teamsIndex.currentTeamId, teamState);
-    const el = document.getElementById("saveState");
-    el.textContent = "Saved ✓";
-    setTimeout(()=> el.textContent = "", 700);
+    ensureIntegrity();
+    saveApp(app);
+    markSaved();
   }
 
-  function stopTimerLoop(){ if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } }
-  function currentGame(){ return teamState.games[teamState.currentGameIndex]; }
+  /* ===============================
+     PERIOD LABELS / TOTALS
+  =============================== */
   function periodLabel(idx){
-    const base = basePeriods(teamState.format);
-    if(idx < base) return teamState.format==="halves" ? `H${idx+1}` : `Q${idx+1}`;
+    const c = currentCompetition();
+    const base = basePeriods(c.format);
+    if(idx < base) return (c.format==="halves") ? `H${idx+1}` : `Q${idx+1}`;
     return `OT${idx-base+1}`;
   }
-  function totalPeriods(game){ return basePeriods(teamState.format) + (game.otCount || 0); }
-  function regulationPeriodsForTeam(){ return basePeriods(teamState.format); }
-
-  function playerById(id){ return teamState.players.find(p=>p.id===id); }
-  function escapeHtml(str){ return (str||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-  function assignedIdsForP(game, pIdx){
-    const a = game.periods[pIdx]?.assignments || {};
-    return new Set(Object.values(a).filter(Boolean));
+  function totalPeriods(game){
+    const c = currentCompetition();
+    return basePeriods(c.format) + (game.otCount || 0);
   }
-  function benchPlayersForP(game, pIdx){
-    const assigned = assignedIdsForP(game, pIdx);
-    return teamState.players.filter(p=>!assigned.has(p.id));
+  function isOTIndex(idx){
+    const c = currentCompetition();
+    return idx >= basePeriods(c.format);
   }
   function totalHome(game){ return game.periods.reduce((s,p)=>s+(p.homeScore||0),0); }
   function totalAway(game){ return game.periods.reduce((s,p)=>s+(p.awayScore||0),0); }
   function isDraw(game){ return totalHome(game) === totalAway(game); }
-  function isOTIndex(idx){ return idx >= basePeriods(teamState.format); }
-  function canStartOT(game){ return game.gameEnded && isDraw(game) && (game.otCount || 0) === 0; }
-  function clamp0(n){ return Math.max(0, n); }
 
-  /* =======================
-     COURT-TIME DISPLAY (HYBRID)
-  ======================= */
+  /* ===============================
+     COURT TIME (HYBRID)
+     - inferred from assignments (1) for regulation periods
+     - if Sub In used, credits can become 0.5 for incoming/outgoing (reg periods only)
+  =============================== */
   function getPlayCredit(game, pIdx, playerId){
     if(!game.playCredits) game.playCredits = {};
     if(!game.playCredits[pIdx]) game.playCredits[pIdx] = {};
@@ -788,7 +853,8 @@
     return assigned.includes(playerId) ? 1 : 0;
   }
   function regulationPeriodsPlayedHybrid(game, playerId){
-    const regMax = basePeriods(teamState.format);
+    const c = currentCompetition();
+    const regMax = basePeriods(c.format);
     let sum = 0;
     for(let i=0;i<regMax;i++){
       const credit = getPlayCredit(game, i, playerId);
@@ -800,15 +866,29 @@
     return (Math.abs(n - Math.round(n)) < 1e-9) ? String(Math.round(n)) : n.toFixed(1);
   }
 
-  /* =======================
-     BENCH PLANNING + QUICK SUB
-  ======================= */
+  function assignedIdsForP(game, pIdx){
+    const a = game.periods[pIdx]?.assignments || {};
+    return new Set(Object.values(a).filter(Boolean));
+  }
+  function benchPlayersForP(game, pIdx){
+    const assigned = assignedIdsForP(game, pIdx);
+    const t = currentTeam();
+    return t.players.filter(p=>!assigned.has(p.id));
+  }
+
+  function playerById(id){
+    const t = currentTeam();
+    return t?.players?.find(p=>p.id===id);
+  }
+
+  /* ===============================
+     BENCH PLANNING + SUB IN
+  =============================== */
   function getPlannedPos(game, pIdx, playerId){
     if(!game.plannedPositions) game.plannedPositions = {};
     if(!game.plannedPositions[pIdx]) game.plannedPositions[pIdx] = {};
     return game.plannedPositions[pIdx][playerId] || "";
   }
-
   function setPlannedPos(game, pIdx, playerId, pos){
     if(!game.plannedPositions) game.plannedPositions = {};
     if(!game.plannedPositions[pIdx]) game.plannedPositions[pIdx] = {};
@@ -817,16 +897,19 @@
   }
 
   function subInFromBench(playerId){
+    const c = currentCompetition();
     const g = currentGame();
-    const pIdx = g.selectedP; // editing period
+    if(g.gameEnded) return;
+
+    const pIdx = g.selectedP;
     const pos = getPlannedPos(g, pIdx, playerId);
     if(!pos) return alert("Set a Next position first.");
 
     const per = g.periods[pIdx];
     const outgoing = per.assignments[pos] || null;
 
-    // credit 0.5 (REGULATION ONLY) for in/out when using Sub In
-    const regMax = basePeriods(teamState.format);
+    // credit 0.5 in REGULATION ONLY
+    const regMax = basePeriods(c.format);
     if(pIdx < regMax){
       bumpPlayCredit(g, pIdx, playerId, 0.5);
       if(outgoing && outgoing !== playerId) bumpPlayCredit(g, pIdx, outgoing, 0.5);
@@ -834,21 +917,22 @@
 
     per.assignments[pos] = playerId;
 
-    // ensure player not in two positions
+    // ensure not in two positions
     for(const p of POSITIONS){
       if(p !== pos && per.assignments[p] === playerId) per.assignments[p] = null;
     }
 
-    // clear plan after use
     setPlannedPos(g, pIdx, playerId, "");
-
     saveAll();
     renderAll();
   }
 
-  /* ===== ADD / REMOVE PLAYERS ===== */
-  function clearPlayerFromAssignments(pid){
-    for(const g of teamState.games){
+  /* ===============================
+     ADD / REMOVE PLAYERS
+  =============================== */
+  function clearPlayerFromTeam(pid){
+    const t = currentTeam();
+    for(const g of t.games){
       for(let pi=0; pi<g.periods.length; pi++){
         const per = g.periods[pi];
         for(const pos of POSITIONS){
@@ -868,14 +952,15 @@
   }
 
   function addPlayer(){
-    if(!hasTeams()) return;
-    if(teamState.players.length >= MAX_PLAYERS) return alert(`Max players is ${MAX_PLAYERS}.`);
+    const t = currentTeam();
+    if(!t) return;
+    if(t.players.length >= MAX_PLAYERS) return alert(`Max players is ${MAX_PLAYERS}.`);
 
-    const nextNum = teamState.players.length + 1;
+    const nextNum = t.players.length + 1;
     const p = { id: crypto.randomUUID(), name: `Player ${nextNum}` };
-    teamState.players.push(p);
+    t.players.push(p);
 
-    for(const g of teamState.games){
+    for(const g of t.games){
       if(!g.playerStats) g.playerStats = {};
       g.playerStats[p.id] = { goalsTotal:0, goalsByP:Array.from({length:6}, ()=>0) };
     }
@@ -885,26 +970,663 @@
   }
 
   function removePlayer(pid){
-    if(!hasTeams()) return;
-    if(teamState.players.length <= MIN_PLAYERS){
+    const t = currentTeam();
+    if(!t) return;
+
+    if(t.players.length <= MIN_PLAYERS){
       return alert(`You must keep at least ${MIN_PLAYERS} players (to cover 7 on court).`);
     }
 
     const p = playerById(pid);
     const name = p?.name || "this player";
-    const ok = confirm(`Remove ${name} from this team?\n\nThis will also remove them from all on-court selections.`);
-    if(!ok) return;
+    if(!confirm(`Remove ${name} from this team?\n\nThis will also remove them from all on-court selections + stats for this team.`)) return;
 
-    clearPlayerFromAssignments(pid);
-    teamState.players = teamState.players.filter(x => x.id !== pid);
+    clearPlayerFromTeam(pid);
+    t.players = t.players.filter(x => x.id !== pid);
 
     saveAll();
     renderAll();
   }
 
-  /* =======================
+  /* ===============================
+     TIMER (with half-time alert for QUARTERS ONLY)
+  =============================== */
+  let timerInterval = null;
+
+  function fmtTime(sec){
+    sec = Math.max(0, Math.floor(sec));
+    const m = String(Math.floor(sec / 60)).padStart(2,"0");
+    const s = String(sec % 60).padStart(2,"0");
+    return `${m}:${s}`;
+  }
+
+  function stopTimerLoop(){
+    if(timerInterval){ clearInterval(timerInterval); timerInterval = null; }
+  }
+  function startTimerLoop(){
+    if(timerInterval) return;
+    timerInterval = setInterval(tickTimer, 250);
+  }
+
+  function renderTimer(){
+    const g = currentGame();
+    if(!g) return;
+
+    document.getElementById("timerDisplay").textContent =
+      (g.timerMode==="countdown") ? fmtTime(g.timerRemaining) : fmtTime(g.timerExtraElapsed);
+
+    const tag = document.getElementById("timerModeTag");
+    tag.style.display = (g.timerMode==="countup") ? "inline-block" : "none";
+
+    document.getElementById("timerStartBtn").textContent = g.timerRunning ? "Pause" : "Start";
+  }
+
+  function tickTimer(){
+    const c = currentCompetition();
+    const g = currentGame();
+    if(!g || !g.timerRunning) return;
+
+    const now = Date.now();
+    if(!g.timerLastTick) g.timerLastTick = now;
+
+    const delta = Math.floor((now - g.timerLastTick) / 1000);
+    if(delta <= 0) return;
+
+    g.timerLastTick = now;
+
+    if(g.timerMode === "countdown"){
+      g.timerRemaining = Math.max(0, g.timerRemaining - delta);
+
+      // Halfway alert (ONLY for quarters format, NOT halves, and only in regulation)
+      if(c.format === "quarters" && !isOTIndex(g.liveP)){
+        const halfSec = Math.floor((g.baseMinutes * 60) / 2);
+        if(g.timerRemaining <= halfSec && !g.halfWarned[g.liveP]){
+          g.halfWarned[g.liveP] = true;
+          saveAll();
+          alert("Halfway — make a change");
+        }
+      }
+
+      if(g.timerRemaining === 0){
+        g.timerRunning = false;
+        stopTimerLoop();
+
+        const base = basePeriods(c.format);
+        const ot2Index = base + 1;
+
+        // OT2 play-on if still tied at 0
+        if(g.otCount === 2 && g.liveP === ot2Index && isDraw(g)){
+          g.timerMode = "countup";
+          g.timerExtraElapsed = 0;
+          saveAll();
+          renderAll();
+          return;
+        }
+
+        saveAll();
+        renderTimer();
+        alert("Time!");
+        return;
+      }
+
+    } else {
+      // countup play-on (OT2)
+      g.timerExtraElapsed += delta;
+      const lead = Math.abs(totalHome(g) - totalAway(g));
+      if(lead >= 2){
+        g.timerRunning = false;
+        stopTimerLoop();
+        g.gameEnded = true;
+        saveAll();
+        renderAll();
+        return;
+      }
+    }
+
+    saveAll();
+    renderTimer();
+  }
+
+  function toggleTimer(){
+    const g = currentGame();
+    if(!g) return;
+    if(g.gameEnded) return;
+
+    if(g.timerRunning){
+      g.timerRunning = false;
+      stopTimerLoop();
+    } else {
+      g.timerRunning = true;
+      g.timerLastTick = Date.now();
+      startTimerLoop();
+    }
+    saveAll();
+    renderTimer();
+  }
+
+  function resetTimer(){
+    const g = currentGame();
+    if(!g) return;
+
+    g.timerRunning = false;
+    g.timerLastTick = 0;
+    g.timerMode = "countdown";
+    g.timerExtraElapsed = 0;
+
+    if(isOTIndex(g.selectedP)) g.timerRemaining = g.otMinutes * 60;
+    else g.timerRemaining = g.baseMinutes * 60;
+
+    stopTimerLoop();
+    saveAll();
+    renderTimer();
+  }
+
+  /* ===============================
+     SCORING / EVENTS
+  =============================== */
+  function pushEvent(game, pIdx, type, payload){
+    game.periods[pIdx].events.push({ type, pIdx, payload, t: Date.now() });
+  }
+
+  function scoreTeam(which, delta){
+    const g = currentGame();
+    if(!g || g.gameEnded) return;
+
+    const pIdx = g.liveP;
+    if(which==="home") g.periods[pIdx].homeScore = clamp0((g.periods[pIdx].homeScore||0) + delta);
+    else g.periods[pIdx].awayScore = clamp0((g.periods[pIdx].awayScore||0) + delta);
+
+    pushEvent(g, pIdx, "score", { which, delta });
+    saveAll();
+    renderAll();
+  }
+
+  function scoreFromPosition(pos){
+    const g = currentGame();
+    if(!g || g.gameEnded) return;
+    if(pos!=="GS" && pos!=="GA") return;
+
+    const pIdx = g.liveP;
+    const pid = g.periods[pIdx].assignments[pos];
+    if(!pid) return alert(`Assign a player to ${pos} in LIVE (${periodLabel(pIdx)}) first.`);
+
+    g.periods[pIdx].homeScore += 1;
+
+    const st = g.playerStats[pid] || (g.playerStats[pid] = { goalsTotal:0, goalsByP:Array.from({length:6}, ()=>0) });
+    st.goalsTotal += 1;
+    st.goalsByP[pIdx] = (st.goalsByP[pIdx] || 0) + 1;
+
+    pushEvent(g, pIdx, "playerGoal", { pid, pos });
+    saveAll();
+    renderAll();
+  }
+
+  function undo(){
+    const g = currentGame();
+    if(!g || g.gameEnded) return;
+
+    const pIdx = g.liveP;
+    const events = g.periods[pIdx].events;
+    const last = events.pop();
+    if(!last) return;
+
+    if(last.type==="score"){
+      const {which, delta} = last.payload;
+      if(which==="home") g.periods[pIdx].homeScore = clamp0(g.periods[pIdx].homeScore - delta);
+      else g.periods[pIdx].awayScore = clamp0(g.periods[pIdx].awayScore - delta);
+    }
+
+    if(last.type==="playerGoal"){
+      const {pid} = last.payload;
+      g.periods[pIdx].homeScore = clamp0(g.periods[pIdx].homeScore - 1);
+      const st = g.playerStats[pid];
+      if(st){
+        st.goalsTotal = clamp0(st.goalsTotal - 1);
+        st.goalsByP[pIdx] = clamp0((st.goalsByP[pIdx]||0) - 1);
+      }
+    }
+
+    saveAll();
+    renderAll();
+  }
+
+  /* ===============================
+     POSITIONS (editing)
+  =============================== */
+  function setAssignment(pos, pid){
+    const g = currentGame();
+    if(!g) return;
+
+    const pIdx = g.selectedP;
+    const per = g.periods[pIdx];
+
+    const next = pid || null;
+    if(next){
+      for(const p of POSITIONS){
+        if(p !== pos && per.assignments[p] === next){
+          per.assignments[p] = null;
+        }
+      }
+    }
+    per.assignments[pos] = next;
+    saveAll();
+    renderAll();
+  }
+
+  function copyAssignments(fromP, toP){
+    const g = currentGame();
+    if(!g) return;
+    g.periods[toP].assignments = JSON.parse(JSON.stringify(g.periods[fromP].assignments || {}));
+    saveAll();
+  }
+
+  /* ===============================
+     OVERTIME (ALWAYS OT1 + OT2)
+  =============================== */
+  function canStartOT(game){
+    const c = currentCompetition();
+    return game.gameEnded && isDraw(game) && (game.otCount || 0) === 0 && basePeriods(c.format) >= 2;
+  }
+
+  function startOT(){
+    const c = currentCompetition();
+    const g = currentGame();
+    if(!g || !canStartOT(g)) return;
+
+    g.otCount = 2;
+    g.periods.push(emptyPeriod());
+    g.periods.push(emptyPeriod());
+
+    g.gameEnded = false;
+    const ot1Index = basePeriods(c.format);
+    g.liveP = ot1Index;
+    g.selectedP = ot1Index;
+
+    g.timerMode = "countdown";
+    g.timerExtraElapsed = 0;
+    g.timerRunning = false;
+    g.timerLastTick = 0;
+    g.timerRemaining = g.otMinutes * 60;
+    stopTimerLoop();
+
+    saveAll();
+    renderAll();
+  }
+
+  function endOrNextPeriod(){
+    const c = currentCompetition();
+    const g = currentGame();
+    if(!g || g.gameEnded) return;
+
+    const base = basePeriods(c.format);
+    const ot1Index = base;
+    const ot2Index = base + 1;
+    const lastIndex = totalPeriods(g) - 1;
+
+    // always go to OT2 after OT1
+    if(g.otCount === 2 && g.liveP === ot1Index){
+      g.liveP = ot2Index;
+      g.selectedP = ot2Index;
+      resetTimer();
+      saveAll();
+      renderAll();
+      return;
+    }
+
+    // last period -> end
+    if(g.liveP >= lastIndex){
+      g.gameEnded = true;
+      g.timerRunning = false;
+      stopTimerLoop();
+      saveAll();
+      renderAll();
+      return;
+    }
+
+    g.liveP += 1;
+    g.selectedP = g.liveP;
+    resetTimer();
+    saveAll();
+    renderAll();
+  }
+
+  function reopenGame(){
+    const g = currentGame();
+    if(!g) return;
+    g.gameEnded = false;
+    saveAll();
+    renderAll();
+  }
+
+  /* ===============================
+     COMPETITION / TEAM / GAME MGMT
+  =============================== */
+  function openCompModal(){
+    document.getElementById("newCompName").value = "";
+    document.getElementById("compBack").style.display = "flex";
+  }
+  function closeCompModal(){ document.getElementById("compBack").style.display = "none"; }
+
+  function createCompetitionFromModal(){
+    const name = (document.getElementById("newCompName").value || "").trim() || `Competition ${app.competitions.length+1}`;
+    const format = document.querySelector('input[name="newCompFormat"]:checked')?.value || "quarters";
+
+    const comp = newCompetition(name, format);
+    app.competitions.push(comp);
+    app.currentCompId = comp.id;
+
+    saveAll();
+    closeCompModal();
+    renderAll();
+  }
+
+  function deleteCurrentCompetition(){
+    const c = currentCompetition();
+    if(!c) return;
+    if(!confirm(`Delete competition "${c.name}"?\nThis removes all teams + games inside it.`)) return;
+
+    app.competitions = app.competitions.filter(x => x.id !== c.id);
+    app.currentCompId = app.competitions[0]?.id || null;
+
+    stopTimerLoop();
+    saveAll();
+    renderAll();
+  }
+
+  function switchCompetition(compId){
+    stopTimerLoop();
+    app.currentCompId = compId;
+    saveAll();
+    renderAll();
+  }
+
+  function openTeamModal(){
+    pendingImportedPlayers = null;
+    document.getElementById("newTeamName").value = "";
+    document.getElementById("importPlayersStatus").textContent = "";
+    populateImportPlayersDropdown();
+    document.getElementById("teamBack").style.display = "flex";
+  }
+  function closeTeamModal(){ document.getElementById("teamBack").style.display = "none"; }
+
+  function createTeamFromModal(){
+    const c = currentCompetition();
+    if(!c) return;
+
+    const name = (document.getElementById("newTeamName").value || "").trim() || `Team ${c.teams.length+1}`;
+
+    let players;
+    if(pendingImportedPlayers && pendingImportedPlayers.length){
+      players = pendingImportedPlayers.slice(0, MAX_PLAYERS).map((p,i)=>({
+        id: crypto.randomUUID(),
+        name: p.name || `Player ${i+1}`
+      }));
+    } else {
+      players = newPlayers10();
+    }
+
+    while(players.length < MIN_PLAYERS){
+      players.push({ id: crypto.randomUUID(), name: `Player ${players.length+1}` });
+    }
+
+    const team = {
+      id: crypto.randomUUID(),
+      name,
+      players,
+      games: [newEmptyGame(1, players, c.format)],
+      currentGameIndex: 0
+    };
+
+    c.teams.push(team);
+    c.currentTeamId = team.id;
+
+    pendingImportedPlayers = null;
+
+    closeTeamModal();
+    saveAll();
+    renderAll();
+  }
+
+  function deleteCurrentTeam(){
+    const c = currentCompetition();
+    const t = currentTeam();
+    if(!c || !t) return;
+
+    if(!confirm(`Delete team "${t.name}" from "${c.name}"?\nThis removes all games + players for this team.`)) return;
+
+    c.teams = c.teams.filter(x => x.id !== t.id);
+    c.currentTeamId = c.teams[0]?.id || null;
+
+    stopTimerLoop();
+    saveAll();
+    renderAll();
+  }
+
+  function switchTeam(teamId){
+    const c = currentCompetition();
+    if(!c) return;
+    stopTimerLoop();
+    c.currentTeamId = teamId;
+    saveAll();
+    renderAll();
+  }
+
+  function addGame(){
+    const c = currentCompetition();
+    const t = currentTeam();
+    if(!c || !t) return;
+
+    const nextRound = t.games.length + 1;
+    const g = newEmptyGame(nextRound, t.players, c.format);
+    t.games.push(g);
+    t.currentGameIndex = t.games.length - 1;
+
+    stopTimerLoop();
+    saveAll();
+    renderAll();
+  }
+
+  function goPrevGame(){
+    const t = currentTeam();
+    if(!t) return;
+    if(t.currentGameIndex <= 0) return;
+    stopTimerLoop();
+    t.currentGameIndex -= 1;
+    saveAll();
+    renderAll();
+  }
+  function goNextGame(){
+    const t = currentTeam();
+    if(!t) return;
+    if(t.currentGameIndex >= t.games.length - 1) return;
+    stopTimerLoop();
+    t.currentGameIndex += 1;
+    saveAll();
+    renderAll();
+  }
+
+  function resetThisGame(){
+    const c = currentCompetition();
+    const t = currentTeam();
+    const g = currentGame();
+    if(!c || !t || !g) return;
+
+    const idx = t.currentGameIndex;
+    const round = t.games[idx].round;
+    t.games[idx] = newEmptyGame(round, t.players, c.format);
+
+    stopTimerLoop();
+    saveAll();
+    renderAll();
+  }
+
+  function resetTeam(){
+    const c = currentCompetition();
+    const t = currentTeam();
+    if(!c || !t) return;
+
+    if(!confirm(`Reset team "${t.name}"?\nThis wipes players + all games for this team.`)) return;
+
+    const name = t.name;
+    const fresh = {
+      id: t.id,
+      name,
+      players: newPlayers10(),
+      games: [],
+      currentGameIndex: 0
+    };
+    fresh.games = [newEmptyGame(1, fresh.players, c.format)];
+
+    // replace team object in comp
+    const i = c.teams.findIndex(x => x.id === t.id);
+    c.teams[i] = fresh;
+    c.currentTeamId = fresh.id;
+
+    stopTimerLoop();
+    saveAll();
+    renderAll();
+  }
+
+  /* ===============================
+     IMPORT PLAYERS (ADD TEAM MODAL)
+     - imports from ANY team in ANY competition
+  =============================== */
+  function populateImportPlayersDropdown(){
+    const sel = document.getElementById("importPlayersSource");
+    sel.innerHTML = "";
+
+    const items = [];
+    for(const comp of app.competitions){
+      for(const team of comp.teams){
+        items.push({ compName: comp.name, teamId: team.id, label: `${comp.name} • ${team.name}` });
+      }
+    }
+
+    const optBlank = document.createElement("option");
+    optBlank.value = "";
+    optBlank.textContent = "— Select a team —";
+    sel.appendChild(optBlank);
+
+    for(const it of items){
+      const opt = document.createElement("option");
+      opt.value = it.teamId;
+      opt.textContent = it.label.slice(0, 60);
+      sel.appendChild(opt);
+    }
+
+    sel.disabled = items.length === 0;
+  }
+
+  function findTeamByIdAnywhere(teamId){
+    for(const comp of app.competitions){
+      const team = comp.teams.find(t => t.id === teamId);
+      if(team) return { comp, team };
+    }
+    return null;
+  }
+
+  function importPlayersIntoNewTeam(){
+    const sel = document.getElementById("importPlayersSource");
+    const status = document.getElementById("importPlayersStatus");
+    const teamId = sel?.value;
+
+    if(!teamId) return alert("Pick a team to import players from.");
+
+    const found = findTeamByIdAnywhere(teamId);
+    if(!found?.team?.players?.length) return alert("That team has no players saved.");
+
+    let names = found.team.players
+      .map(p => ({ name: (p.name || "").trim() }))
+      .filter(p => p.name.length > 0);
+
+    if(names.length > MAX_PLAYERS){
+      alert(`That team has ${names.length} players. Max is ${MAX_PLAYERS}, so only the first ${MAX_PLAYERS} will be imported.`);
+      names = names.slice(0, MAX_PLAYERS);
+    }
+
+    pendingImportedPlayers = names;
+    while(pendingImportedPlayers.length < MIN_PLAYERS){
+      pendingImportedPlayers.push({ name: `Player ${pendingImportedPlayers.length + 1}` });
+    }
+
+    status.textContent = `Imported ${pendingImportedPlayers.length} players (will be used for the new team).`;
+  }
+
+  /* ===============================
+     SYNC (Export/Import TEAM only)
+  =============================== */
+  async function copyText(text){
+    try { await navigator.clipboard.writeText(text); alert("Copied."); }
+    catch { alert("Copy failed (iPad Safari can block clipboard sometimes)."); }
+  }
+
+  function exportTeam(){
+    const c = currentCompetition();
+    const t = currentTeam();
+    if(!c || !t) return;
+
+    const payload = {
+      comp: { name: c.name, format: c.format },
+      team: t
+    };
+    const text = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    document.getElementById("syncText").value = text;
+    copyText(text);
+  }
+
+  function importTeamReplace(){
+    const c = currentCompetition();
+    const t = currentTeam();
+    if(!c || !t) return;
+
+    const raw = (document.getElementById("syncText").value || "").trim();
+    if(!raw) return alert("Paste export text first.");
+
+    let payload;
+    try{
+      payload = JSON.parse(decodeURIComponent(escape(atob(raw))));
+    } catch {
+      return alert("That doesn’t look like valid export text.");
+    }
+
+    if(!payload?.team) return alert("Invalid payload.");
+    const imported = payload.team;
+
+    // force this team to use THIS competition format
+    // (games will be kept, but ensure periods match format)
+    imported.id = t.id; // replace-in-place
+    imported.name = imported.name || t.name;
+
+    // if players missing, keep existing
+    if(!Array.isArray(imported.players) || imported.players.length < MIN_PLAYERS){
+      imported.players = t.players;
+    }
+    if(imported.players.length > MAX_PLAYERS) imported.players = imported.players.slice(0, MAX_PLAYERS);
+
+    // ensure games exist
+    if(!Array.isArray(imported.games) || !imported.games.length){
+      imported.games = [newEmptyGame(1, imported.players, c.format)];
+      imported.currentGameIndex = 0;
+    }
+
+    // replace current team object
+    const idx = c.teams.findIndex(x => x.id === t.id);
+    c.teams[idx] = imported;
+    c.currentTeamId = imported.id;
+
+    stopTimerLoop();
+    saveAll();
+    closeSyncModal();
+    renderAll();
+    alert("Imported (team replaced).");
+  }
+
+  function openSyncModal(){ document.getElementById("syncBack").style.display = "flex"; }
+  function closeSyncModal(){ document.getElementById("syncBack").style.display = "none"; }
+
+  /* ===============================
      HOW-TO
-  ======================= */
+  =============================== */
   function openHowto(){ document.getElementById("howtoBack").style.display="flex"; }
   function closeHowto(){ document.getElementById("howtoBack").style.display="none"; }
   function markHowtoSeen(){ localStorage.setItem(HOWTO_FLAG_KEY, "1"); }
@@ -912,12 +1634,12 @@
   function closeHowtoAndContinue(){
     markHowtoSeen();
     closeHowto();
-    if(!hasTeams()) openTeamModal();
+    if(!hasCompetitions()) openCompModal();
   }
 
-  /* =======================
-     ROLL-UPS
-  ======================= */
+  /* ===============================
+     ROLL-UPS (adds arrow left of first row)
+  =============================== */
   function initRollups(){
     const cards = document.querySelectorAll(".card");
     cards.forEach(card=>{
@@ -960,633 +1682,91 @@
     });
   }
 
-  /* =======================
-     TIMER
-  ======================= */
-  let timerInterval = null;
-  function fmtTime(sec){
-    sec = Math.max(0, Math.floor(sec));
-    const m = String(Math.floor(sec / 60)).padStart(2,"0");
-    const s = String(sec % 60).padStart(2,"0");
-    return `${m}:${s}`;
-  }
-
-  function tickTimer(){
-    if(!hasTeams()) return;
-    const g = currentGame();
-    if(!g.timerRunning) return;
-
-    const now = Date.now();
-    if(!g.timerLastTick) g.timerLastTick = now;
-
-    const delta = Math.floor((now - g.timerLastTick) / 1000);
-    if(delta <= 0) return;
-
-    g.timerLastTick = now;
-
-    if(g.timerMode === "countdown"){
-      g.timerRemaining = Math.max(0, g.timerRemaining - delta);
-
-      if(g.timerRemaining === 0){
-        g.timerRunning = false;
-        stopTimerLoop();
-
-        const base = basePeriods(teamState.format);
-        const ot2Index = base + 1;
-
-        // OT2 play-on if still tied at 0
-        if(g.otCount === 2 && g.liveP === ot2Index && isDraw(g)){
-          g.timerMode = "countup";
-          g.timerExtraElapsed = 0;
-          renderTimer();
-          saveAll();
-          return;
-        }
-
-        renderTimer();
-        saveAll();
-        alert("Time!");
-        return;
-      }
-    } else {
-      g.timerExtraElapsed += delta;
-      const lead = Math.abs(totalHome(g) - totalAway(g));
-      if(lead >= 2){
-        g.timerRunning = false;
-        stopTimerLoop();
-        g.gameEnded = true;
-        saveAll();
-        renderAll();
-        return;
-      }
-    }
-
-    saveAll();
-    renderTimer();
-  }
-
-  function startTimerLoop(){ if(timerInterval) return; timerInterval = setInterval(tickTimer, 250); }
-
-  function toggleTimer(){
-    if(!hasTeams()) return;
-    const g = currentGame();
-    if(g.gameEnded) return;
-
-    if(g.timerRunning){
-      g.timerRunning = false;
-      stopTimerLoop();
-    } else {
-      g.timerRunning = true;
-      g.timerLastTick = Date.now();
-      startTimerLoop();
-    }
-    saveAll();
-    renderTimer();
-  }
-
-  function resetTimer(){
-    if(!hasTeams()) return;
-    const g = currentGame();
-
-    g.timerRunning = false;
-    g.timerLastTick = 0;
-    g.timerMode = "countdown";
-    g.timerExtraElapsed = 0;
-
-    if(isOTIndex(g.selectedP)) g.timerRemaining = g.otMinutes * 60;
-    else g.timerRemaining = g.baseMinutes * 60;
-
-    stopTimerLoop();
-    saveAll();
-    renderTimer();
-  }
-
-  function renderTimer(){
-    if(!hasTeams()) return;
-    const g = currentGame();
-    document.getElementById("timerDisplay").textContent =
-      (g.timerMode==="countdown") ? fmtTime(g.timerRemaining) : fmtTime(g.timerExtraElapsed);
-
-    const tag = document.getElementById("timerModeTag");
-    tag.style.display = (g.timerMode==="countup") ? "inline-block" : "none";
-
-    document.getElementById("timerStartBtn").textContent = g.timerRunning ? "Pause" : "Start";
-  }
-
-  /* =======================
-     SCORING / EVENTS
-  ======================= */
-  function pushEvent(game, pIdx, type, payload){
-    game.periods[pIdx].events.push({ type, pIdx, payload, t: Date.now() });
-  }
-
-  function scoreTeam(which, delta){
-    const g = currentGame();
-    if(g.gameEnded) return;
-    const pIdx = g.liveP;
-
-    if(which==="home") g.periods[pIdx].homeScore = clamp0((g.periods[pIdx].homeScore||0) + delta);
-    else g.periods[pIdx].awayScore = clamp0((g.periods[pIdx].awayScore||0) + delta);
-
-    pushEvent(g, pIdx, "score", { which, delta });
-    saveAll();
-    renderAll();
-  }
-
-  function scoreFromPosition(pos){
-    const g = currentGame();
-    if(g.gameEnded) return;
-    if(pos!=="GS" && pos!=="GA") return;
-
-    const pIdx = g.liveP;
-    const pid = g.periods[pIdx].assignments[pos];
-    if(!pid) return alert(`Assign a player to ${pos} in LIVE (${periodLabel(pIdx)}) first.`);
-
-    g.periods[pIdx].homeScore += 1;
-
-    const st = g.playerStats[pid] || (g.playerStats[pid] = { goalsTotal:0, goalsByP:Array.from({length:6}, ()=>0) });
-    st.goalsTotal += 1;
-    st.goalsByP[pIdx] = (st.goalsByP[pIdx] || 0) + 1;
-
-    pushEvent(g, pIdx, "playerGoal", { pid, pos });
-    saveAll();
-    renderAll();
-  }
-
-  function undo(){
-    const g = currentGame();
-    if(g.gameEnded) return;
-    const pIdx = g.liveP;
-
-    const events = g.periods[pIdx].events;
-    const last = events.pop();
-    if(!last) return;
-
-    if(last.type==="score"){
-      const {which, delta} = last.payload;
-      if(which==="home") g.periods[pIdx].homeScore = clamp0(g.periods[pIdx].homeScore - delta);
-      else g.periods[pIdx].awayScore = clamp0(g.periods[pIdx].awayScore - delta);
-    }
-
-    if(last.type==="playerGoal"){
-      const {pid} = last.payload;
-      g.periods[pIdx].homeScore = clamp0(g.periods[pIdx].homeScore - 1);
-      const st = g.playerStats[pid];
-      if(st){
-        st.goalsTotal = clamp0(st.goalsTotal - 1);
-        st.goalsByP[pIdx] = clamp0((st.goalsByP[pIdx]||0) - 1);
-      }
-    }
-
-    saveAll();
-    renderAll();
-  }
-
-  /* =======================
-     POSITIONS (editing)
-  ======================= */
-  function setAssignment(pos, pid){
-    const g = currentGame();
-    const pIdx = g.selectedP;
-    const per = g.periods[pIdx];
-
-    const next = pid || null;
-    if(next){
-      for(const p of POSITIONS){
-        if(p !== pos && per.assignments[p] === next){
-          per.assignments[p] = null;
-        }
-      }
-    }
-
-    per.assignments[pos] = next;
-    saveAll();
-    renderAll();
-  }
-
-  function copyAssignments(fromP, toP){
-    const g = currentGame();
-    g.periods[toP].assignments = JSON.parse(JSON.stringify(g.periods[fromP].assignments || {}));
-    saveAll();
-  }
-
-  /* =======================
-     OVERTIME (ALWAYS OT1 + OT2)
-  ======================= */
-  function startOT(){
-    const g = currentGame();
-    if(!canStartOT(g)) return;
-
-    g.otCount = 2;
-    g.periods.push(emptyPeriod());
-    g.periods.push(emptyPeriod());
-
-    g.gameEnded = false;
-    const ot1Index = basePeriods(teamState.format);
-    g.liveP = ot1Index;
-    g.selectedP = ot1Index;
-
-    g.timerMode = "countdown";
-    g.timerExtraElapsed = 0;
-    g.timerRunning = false;
-    g.timerLastTick = 0;
-    g.timerRemaining = g.otMinutes * 60;
-    stopTimerLoop();
-
-    saveAll();
-    renderAll();
-  }
-
-  function endOrNextPeriod(){
-    const g = currentGame();
-    if(g.gameEnded) return;
-
-    const base = basePeriods(teamState.format);
-    const ot1Index = base;
-    const ot2Index = base + 1;
-    const lastIndex = totalPeriods(g) - 1;
-
-    // always go to OT2 after OT1
-    if(g.otCount === 2 && g.liveP === ot1Index){
-      g.liveP = ot2Index;
-      g.selectedP = ot2Index;
-      resetTimer();
-      saveAll();
-      renderAll();
-      return;
-    }
-
-    // if last period -> end
-    if(g.liveP >= lastIndex){
-      g.gameEnded = true;
-      g.timerRunning = false;
-      stopTimerLoop();
-      saveAll();
-      renderAll();
-      return;
-    }
-
-    g.liveP += 1;
-    g.selectedP = g.liveP;
-    resetTimer();
-    saveAll();
-    renderAll();
-  }
-
-  function reopenGame(){
-    const g = currentGame();
-    g.gameEnded = false;
-    saveAll();
-    renderAll();
-  }
-
-  /* =======================
-     TEAM/GAME MANAGEMENT
-  ======================= */
-  function switchTeam(teamId){
-    stopTimerLoop();
-    teamsIndex.currentTeamId = teamId;
-    saveTeamsIndex(teamsIndex);
-    teamState = loadTeamState(teamId) || defaultTeamState(currentTeamMeta()?.format || "quarters");
-    ensureIntegrityAll();
-    renderAll();
-  }
-
-  function openTeamModal(){
-    pendingImportedPlayers = null;
-    document.getElementById("newTeamName").value = "";
-    document.getElementById("importPlayersStatus").textContent = "";
-    populateImportPlayersDropdown();
-    document.getElementById("teamBack").style.display = "flex";
-  }
-  function closeTeamModal(){ document.getElementById("teamBack").style.display = "none"; }
-
-  function openSyncModal(){ document.getElementById("syncBack").style.display = "flex"; }
-  function closeSyncModal(){ document.getElementById("syncBack").style.display = "none"; }
-
-  function createTeamFromModal(){
-    const name = (document.getElementById("newTeamName").value || "").trim() || `Team ${teamsIndex.teams.length+1}`;
-    const format = document.querySelector('input[name="newFormat"]:checked')?.value || "quarters";
-    const id = crypto.randomUUID();
-
-    teamsIndex.teams.push({ id, name, format });
-    teamsIndex.currentTeamId = id;
-    saveTeamsIndex(teamsIndex);
-
-    let players;
-    if(pendingImportedPlayers && pendingImportedPlayers.length){
-      players = pendingImportedPlayers.slice(0, MAX_PLAYERS).map((p,i)=>({
-        id: crypto.randomUUID(),
-        name: p.name || `Player ${i+1}`
-      }));
-    } else {
-      players = newPlayers10();
-    }
-
-    while(players.length < MIN_PLAYERS){
-      players.push({ id: crypto.randomUUID(), name: `Player ${players.length+1}` });
-    }
-
-    const newTeamState = {
-      teamName: name,
-      format,
-      players,
-      games: [newEmptyGame(1, players, format)],
-      currentGameIndex: 0
-    };
-
-    teamState = newTeamState;
-    saveTeamState(id, teamState);
-
-    pendingImportedPlayers = null;
-
-    closeTeamModal();
-    ensureIntegrityAll();
-    renderAll();
-  }
-
-  function deleteCurrentTeam(){
-    if(!hasTeams()) return;
-    const meta = currentTeamMeta();
-    if(!confirm(`Delete team "${meta.name}"? This removes all its games + players.`)) return;
-
-    const id = teamsIndex.currentTeamId;
-    teamsIndex.teams = teamsIndex.teams.filter(t=>t.id!==id);
-    localStorage.removeItem(teamStorageKey(id));
-
-    if(teamsIndex.teams.length){
-      teamsIndex.currentTeamId = teamsIndex.teams[0].id;
-      teamState = loadTeamState(teamsIndex.currentTeamId) || defaultTeamState(currentTeamMeta().format || "quarters");
-    } else {
-      teamsIndex.currentTeamId = null;
-      teamState = null;
-    }
-    saveTeamsIndex(teamsIndex);
-    ensureIntegrityAll();
-    renderAll();
-  }
-
-  function addGame(){
-    const nextRound = teamState.games.length + 1;
-    const g = newEmptyGame(nextRound, teamState.players, teamState.format);
-    teamState.games.push(g);
-    teamState.currentGameIndex = teamState.games.length - 1;
-    stopTimerLoop();
-    saveAll();
-    renderAll();
-  }
-
-  function goPrevGame(){
-    if(teamState.currentGameIndex <= 0) return;
-    stopTimerLoop();
-    teamState.currentGameIndex -= 1;
-    saveAll();
-    renderAll();
-  }
-  function goNextGame(){
-    if(teamState.currentGameIndex >= teamState.games.length - 1) return;
-    stopTimerLoop();
-    teamState.currentGameIndex += 1;
-    saveAll();
-    renderAll();
-  }
-
-  function resetThisGame(){
-    const idx = teamState.currentGameIndex;
-    const round = teamState.games[idx].round;
-    teamState.games[idx] = newEmptyGame(round, teamState.players, teamState.format);
-    stopTimerLoop();
-    saveAll();
-    renderAll();
-  }
-
-  function resetTeamSeason(){
-    if(!confirm("Reset this team (players + all games)?")) return;
-    const meta = currentTeamMeta();
-    teamState = defaultTeamState(meta.format || "quarters");
-    teamState.teamName = meta.name || "";
-    saveTeamState(meta.id, teamState);
-    stopTimerLoop();
-    saveAll();
-    renderAll();
-  }
-
-  /* =======================
-     IMPORT PLAYERS (ADD TEAM MODAL)
-  ======================= */
-  function populateImportPlayersDropdown(){
-    const sel = document.getElementById("importPlayersSource");
-    if(!sel) return;
-    sel.innerHTML = "";
-
-    if(!teamsIndex?.teams?.length){
-      const opt = document.createElement("option");
-      opt.value = "";
-      opt.textContent = "No teams available";
-      sel.appendChild(opt);
-      sel.disabled = true;
-      return;
-    }
-
-    const optBlank = document.createElement("option");
-    optBlank.value = "";
-    optBlank.textContent = "— Select a team —";
-    sel.appendChild(optBlank);
-
-    teamsIndex.teams.forEach(t=>{
-      const opt = document.createElement("option");
-      opt.value = t.id;
-      opt.textContent = t.name || "Unnamed team";
-      sel.appendChild(opt);
-    });
-
-    sel.disabled = false;
-  }
-
-  function importPlayersIntoNewTeam(){
-    const sel = document.getElementById("importPlayersSource");
-    const status = document.getElementById("importPlayersStatus");
-    const teamId = sel?.value;
-
-    if(!teamId) return alert("Pick a team to import players from.");
-
-    const src = loadTeamState(teamId);
-    if(!src?.players?.length) return alert("That team has no players saved.");
-
-    let names = src.players
-      .map(p => ({ name: (p.name || "").trim() }))
-      .filter(p => p.name.length > 0);
-
-    if(names.length > MAX_PLAYERS){
-      alert(`That team has ${names.length} players. Max is ${MAX_PLAYERS}, so only the first ${MAX_PLAYERS} will be imported.`);
-      names = names.slice(0, MAX_PLAYERS);
-    }
-
-    pendingImportedPlayers = names;
-
-    while(pendingImportedPlayers.length < MIN_PLAYERS){
-      pendingImportedPlayers.push({ name: `Player ${pendingImportedPlayers.length + 1}` });
-    }
-
-    status.textContent = `Imported ${pendingImportedPlayers.length} players (will be used for new team).`;
-  }
-
-  /* =======================
-     COPY / SYNC
-  ======================= */
-  async function copyText(text){
-    try { await navigator.clipboard.writeText(text); alert("Copied."); }
-    catch { alert("Copy failed (iPad Safari can block clipboard sometimes)."); }
-  }
-
-  function buildRotationsText(game){
-    const lines = [];
-    for(let p=0;p<totalPeriods(game);p++){
-      const a = game.periods[p].assignments || {};
-      const posText = POSITIONS.map(pos=>`${pos}: ${a[pos] ? playerById(a[pos])?.name || "—" : "—"}`).join(" | ");
-      lines.push(`${periodLabel(p)}: ${posText}`);
-    }
-    return lines.join("\n");
-  }
-
-  function buildGameSummaryText(game){
-    const team = (teamState.teamName || "Home").trim() || "Home";
-    const opp = (game.opponent || "Away").trim() || "Away";
-    const bits = [`Game ${game.round}`];
-    if(game.gameDate) bits.push(game.gameDate);
-    if((game.roundName||"").trim()) bits.push(game.roundName.trim());
-    const lines = [];
-    lines.push(bits.join(" • "));
-    lines.push(`${team} ${totalHome(game)} - ${totalAway(game)} ${opp}`);
-    for(let p=0;p<basePeriods(teamState.format);p++){
-      lines.push(`${periodLabel(p)}: ${team} ${game.periods[p].homeScore} - ${game.periods[p].awayScore} ${opp}`);
-    }
-    if(game.otCount){
-      lines.push(`OT: ${team} ${totalHome(game)} - ${totalAway(game)} ${opp}`);
-    }
-    lines.push("");
-    lines.push("Rotations:");
-    lines.push(buildRotationsText(game));
-    if((game.notes||"").trim()){
-      lines.push("");
-      lines.push(`Notes: ${game.notes.trim()}`);
-    }
-    return lines.join("\n");
-  }
-
-  function buildSeasonSummaryText(){
-    const team = (teamState.teamName || "Team").trim() || "Team";
-    const lines = [];
-    lines.push(`Season summary for ${team}`);
-    lines.push(`Games: ${teamState.games.length}`);
-    lines.push("");
-    for(const g of teamState.games){
-      const opp = (g.opponent||"Away").trim() || "Away";
-      const bits = [`Game ${g.round}`];
-      if(g.gameDate) bits.push(g.gameDate);
-      if((g.roundName||"").trim()) bits.push(g.roundName.trim());
-      lines.push(`${bits.join(" • ")}: ${team} ${totalHome(g)} - ${totalAway(g)} ${opp}`);
-    }
-    return lines.join("\n");
-  }
-
-  function exportTeam(){
-    const meta = currentTeamMeta();
-    const payload = { meta, teamState };
-    const text = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-    document.getElementById("syncText").value = text;
-    copyText(text);
-  }
-
-  function importTeam(){
-    const raw = (document.getElementById("syncText").value || "").trim();
-    if(!raw) return alert("Paste export text first.");
-    let payload;
-    try{
-      payload = JSON.parse(decodeURIComponent(escape(atob(raw))));
-    } catch {
-      return alert("That doesn’t look like valid export text.");
-    }
-    if(!payload?.meta?.id || !payload?.teamState) return alert("Invalid payload.");
-
-    const cur = currentTeamMeta();
-    const targetId = cur?.id || payload.meta.id;
-
-    if(!teamsIndex.teams.some(t=>t.id===targetId)){
-      teamsIndex.teams.push({ id: targetId, name: payload.meta.name || "Imported Team", format: payload.meta.format || "quarters" });
-    } else {
-      const t = teamsIndex.teams.find(t=>t.id===targetId);
-      t.name = payload.meta.name || t.name;
-      t.format = payload.meta.format || t.format;
-    }
-
-    teamsIndex.currentTeamId = targetId;
-    saveTeamsIndex(teamsIndex);
-    saveTeamState(targetId, payload.teamState);
-
-    teamState = loadTeamState(targetId);
-    ensureIntegrityAll();
-    closeSyncModal();
-    renderAll();
-    alert("Imported.");
-  }
-
-  /* =======================
+  /* ===============================
      RENDER
-  ======================= */
+  =============================== */
+  function formatLabel(format){ return (format==="halves") ? "2 halves" : "4 quarters"; }
+
+  function renderCompTabs(){
+    const seg = document.getElementById("compSeg");
+    seg.innerHTML = "";
+    if(!hasCompetitions()) return;
+
+    for(const comp of app.competitions){
+      const b = document.createElement("button");
+      b.textContent = (comp.name || "Competition").slice(0,18);
+      b.className = (comp.id===app.currentCompId) ? "active" : "";
+      b.addEventListener("click", ()=>switchCompetition(comp.id));
+      seg.appendChild(b);
+    }
+  }
+
   function renderTeamTabs(){
     const seg = document.getElementById("teamSeg");
     seg.innerHTML = "";
-    if(!hasTeams()) return;
+    const c = currentCompetition();
+    if(!c || !c.teams?.length) return;
 
-    teamsIndex.teams.forEach(t=>{
+    for(const team of c.teams){
       const b = document.createElement("button");
-      b.textContent = (t.name || "Team").slice(0,18);
-      b.className = (t.id===teamsIndex.currentTeamId) ? "active" : "";
-      b.addEventListener("click", ()=>switchTeam(t.id));
+      b.textContent = (team.name || "Team").slice(0,18);
+      b.className = (team.id===c.currentTeamId) ? "active" : "";
+      b.addEventListener("click", ()=>switchTeam(team.id));
       seg.appendChild(b);
-    });
+    }
   }
 
-  function formatLabel(){ return (teamState.format==="halves") ? "2 halves" : "4 quarters"; }
+  function renderTopFields(){
+    const c = currentCompetition();
+    document.getElementById("compName").value = c?.name || "";
+    document.getElementById("formatLabel").textContent = formatLabel(c?.format || "quarters");
+  }
 
   function renderGameHeader(){
+    const c = currentCompetition();
+    const t = currentTeam();
     const g = currentGame();
-    document.getElementById("teamName").value = teamState.teamName || "";
-    document.getElementById("formatLabel").textContent = formatLabel();
+
+    document.getElementById("teamName").value = t?.name || "";
+
     document.getElementById("roundLabel").textContent = `Game ${g.round}`;
-    document.getElementById("roundCountLabel").textContent = `(${teamState.games.length} game${teamState.games.length===1?'':'s'})`;
+    document.getElementById("roundCountLabel").textContent = `(${t.games.length} game${t.games.length===1?'':'s'})`;
+
     document.getElementById("roundName").value = g.roundName || "";
     document.getElementById("gameDate").value = g.gameDate || "";
     document.getElementById("opponent").value = g.opponent || "";
     document.getElementById("notes").value = g.notes || "";
-    document.getElementById("prevGameBtn").disabled = (teamState.currentGameIndex <= 0);
-    document.getElementById("nextGameBtn").disabled = (teamState.currentGameIndex >= teamState.games.length - 1);
+
+    document.getElementById("prevGameBtn").disabled = (t.currentGameIndex <= 0);
+    document.getElementById("nextGameBtn").disabled = (t.currentGameIndex >= t.games.length - 1);
   }
 
   function renderRoundSeg(){
+    const t = currentTeam();
     const seg = document.getElementById("roundSeg");
     seg.innerHTML = "";
-    teamState.games.forEach((g,i)=>{
+    for(let i=0;i<t.games.length;i++){
+      const g = t.games[i];
       const b = document.createElement("button");
       b.textContent = `G${g.round}`;
-      b.className = (i===teamState.currentGameIndex) ? "active" : "";
+      b.className = (i===t.currentGameIndex) ? "active" : "";
       b.addEventListener("click", ()=>{
         stopTimerLoop();
-        teamState.currentGameIndex = i;
+        t.currentGameIndex = i;
         saveAll();
         renderAll();
       });
       seg.appendChild(b);
-    });
+    }
   }
 
   function renderPlayersInputs(){
+    const t = currentTeam();
     const wrap = document.getElementById("playersInputs");
     wrap.innerHTML = "";
     wrap.style.gridTemplateColumns = (window.innerWidth >= 780) ? "1fr 1fr" : "1fr";
 
-    teamState.players.forEach((p, idx)=>{
+    t.players.forEach((p, idx)=>{
       const div = document.createElement("div");
       div.className = "row";
 
@@ -1599,18 +1779,20 @@
       `;
 
       const input = div.querySelector("input");
+
+      // ✅ Auto-select full name on tap/focus
       input.addEventListener("focus", () => setTimeout(() => input.select(), 0));
       input.addEventListener("click", () => setTimeout(() => input.select(), 0));
 
       input.addEventListener("input", (e)=>{
         p.name = e.target.value;
         saveAll();
+        // IMPORTANT: do NOT rebuild player inputs on every keystroke
         renderPositions();
         renderBench();
         renderScores();
         renderStats();
         renderAllPeriodsPositions();
-        renderRoundSeg();
       });
 
       const delBtn = div.querySelector("button.miniDanger");
@@ -1622,8 +1804,8 @@
 
   function renderPeriodSeg(){
     const g = currentGame();
-    function buildSeg(containerId){
-      const seg = document.getElementById(containerId);
+    function buildSeg(id){
+      const seg = document.getElementById(id);
       seg.innerHTML = "";
       for(let i=0;i<totalPeriods(g);i++){
         const b = document.createElement("button");
@@ -1645,10 +1827,12 @@
   }
 
   function renderMinutesSelect(){
+    const c = currentCompetition();
     const g = currentGame();
     const sel = document.getElementById("minutesSelect");
     sel.innerHTML = "";
-    const list = (teamState.format==="halves") ? TOURN_MINUTES : LEAGUE_MINUTES;
+
+    const list = (c.format==="halves") ? TOURN_MINUTES : LEAGUE_MINUTES;
     for(const m of list){
       const opt = document.createElement("option");
       opt.value = String(m);
@@ -1672,8 +1856,10 @@
   }
 
   function renderScores(){
+    const t = currentTeam();
     const g = currentGame();
-    const team = (teamState.teamName || "Home").trim() || "Home";
+
+    const team = (t.name || "Home").trim() || "Home";
     const opp  = (g.opponent || "Away").trim() || "Away";
 
     document.getElementById("homeLabel").textContent = team;
@@ -1689,6 +1875,7 @@
     const banner = document.getElementById("finalBanner");
     const text = document.getElementById("finalBannerText");
     banner.classList.remove("win","loss","draw");
+
     if(g.gameEnded){
       banner.style.display = "block";
       const diff = totalHome(g) - totalAway(g);
@@ -1701,11 +1888,13 @@
   }
 
   function renderPositions(){
+    const c = currentCompetition();
+    const t = currentTeam();
     const g = currentGame();
     const grid = document.getElementById("positionsGrid");
     grid.innerHTML = "";
     const pIdx = g.selectedP;
-    const max = regulationPeriodsForTeam();
+    const max = basePeriods(c.format);
 
     POSITIONS.forEach(pos=>{
       const row = document.createElement("div");
@@ -1723,7 +1912,7 @@
       opt0.textContent = "— select player —";
       sel.appendChild(opt0);
 
-      teamState.players.forEach(p=>{
+      t.players.forEach(p=>{
         const opt = document.createElement("option");
         opt.value = p.id;
         const played = regulationPeriodsPlayedHybrid(g, p.id);
@@ -1741,6 +1930,8 @@
   }
 
   function renderBench(){
+    const c = currentCompetition();
+    const t = currentTeam();
     const g = currentGame();
     const list = document.getElementById("benchList");
     list.innerHTML = "";
@@ -1749,7 +1940,7 @@
     const bench = benchPlayersForP(g, pIdx);
     document.getElementById("benchCount").textContent = `${bench.length} on bench`;
 
-    const max = regulationPeriodsForTeam();
+    const max = basePeriods(c.format);
 
     bench.forEach(p=>{
       const item = document.createElement("div");
@@ -1781,6 +1972,7 @@
       const btn = document.createElement("button");
       btn.className = "primary small";
       btn.textContent = "Sub In";
+      btn.disabled = g.gameEnded;
       btn.addEventListener("click", ()=> subInFromBench(p.id));
 
       right.appendChild(sel);
@@ -1794,18 +1986,20 @@
   }
 
   function renderStats(){
+    const c = currentCompetition();
+    const t = currentTeam();
     const g = currentGame();
     const list = document.getElementById("statsList");
     list.innerHTML = "";
 
-    const sorted = [...teamState.players].sort((a,b)=>{
+    const sorted = [...t.players].sort((a,b)=>{
       const ga = g.playerStats[a.id]?.goalsTotal || 0;
       const gb = g.playerStats[b.id]?.goalsTotal || 0;
       if(gb !== ga) return gb - ga;
       return a.name.localeCompare(b.name);
     });
 
-    const max = regulationPeriodsForTeam();
+    const max = basePeriods(c.format);
 
     sorted.forEach(p=>{
       const gameGoals = g.playerStats[p.id]?.goalsTotal || 0;
@@ -1846,9 +2040,11 @@
   }
 
   function renderPeriodTable(){
+    const t = currentTeam();
     const g = currentGame();
     const wrap = document.getElementById("periodTableWrap");
-    const team = (teamState.teamName || "Home").trim() || "Home";
+
+    const team = (t.name || "Home").trim() || "Home";
     const opp  = (g.opponent || "Away").trim() || "Away";
 
     const rows = g.periods.map((p,i)=>`
@@ -1884,6 +2080,7 @@
     const g = currentGame();
     const wrap = document.getElementById("allPeriodsPositions");
     wrap.innerHTML = "";
+
     for(let p=0;p<totalPeriods(g);p++){
       const a = g.periods[p].assignments || {};
       const line = POSITIONS.map(pos=>{
@@ -1935,14 +2132,16 @@
   }
 
   function updateEndButtons(){
+    const c = currentCompetition();
     const g = currentGame();
+
     const endBtn = document.getElementById("periodFinishedBtn");
     const reopenBtn = document.getElementById("reopenBtn");
     const startOTBtn = document.getElementById("startOTBtn");
 
     startOTBtn.style.display = canStartOT(g) ? "inline-block" : "none";
 
-    const base = basePeriods(teamState.format);
+    const base = basePeriods(c.format);
     const ot1Index = base;
     const ot2Index = base + 1;
 
@@ -1963,7 +2162,7 @@
         if(isLast){
           endBtn.textContent = "End game";
         } else {
-          endBtn.textContent = (teamState.format==="halves") ? "Half finished → Next" : "Qtr finished → Next";
+          endBtn.textContent = (c.format==="halves") ? "Half finished → Next" : "Qtr finished → Next";
         }
       }
     }
@@ -1975,16 +2174,32 @@
     }
   }
 
-  function renderAll(){
-    ensureIntegrityAll();
-
-    const showWelcome = !hasTeams();
+  function renderWelcome(){
+    const showWelcome = !hasCompetitions();
     document.getElementById("welcomeCard").style.display = showWelcome ? "block" : "none";
-    const sections = ["topCard","setupCard","periodCard","positionsCard","statsCard","summaryCard","notesCard"];
-    sections.forEach(id => document.getElementById(id).style.display = showWelcome ? "none" : "block");
 
+    const sections = ["topCard","setupCard","periodCard","positionsCard","statsCard","summaryCard","notesCard"];
+    for(const id of sections){
+      document.getElementById(id).style.display = showWelcome ? "none" : "block";
+    }
+  }
+
+  function renderAll(){
+    ensureIntegrity();
+    renderWelcome();
+    renderCompTabs();
+    if(!hasCompetitions()) return;
+
+    renderTopFields();
     renderTeamTabs();
-    if(showWelcome) return;
+
+    // if comp exists but no team yet, prompt add team
+    if(!hasTeamsInComp()){
+      // hide game sections but keep top card visible
+      const hideIds = ["setupCard","periodCard","positionsCard","statsCard","summaryCard","notesCard"];
+      hideIds.forEach(id => document.getElementById(id).style.display = "none");
+      return;
+    }
 
     renderGameHeader();
     renderRoundSeg();
@@ -2005,20 +2220,25 @@
     updateEndButtons();
   }
 
-  /* =======================
+  /* ===============================
      WIRING
-  ======================= */
+  =============================== */
   document.getElementById("howtoBtn").addEventListener("click", openHowto);
   document.getElementById("howtoClose").addEventListener("click", closeHowtoAndContinue);
   document.getElementById("howtoOk").addEventListener("click", closeHowtoAndContinue);
   document.getElementById("howtoDontShow").addEventListener("click", closeHowtoAndContinue);
-  document.getElementById("howtoBack").addEventListener("click", (e)=>{
-    if(e.target.id==="howtoBack") closeHowtoAndContinue();
-  });
+  document.getElementById("howtoBack").addEventListener("click", (e)=>{ if(e.target.id==="howtoBack") closeHowtoAndContinue(); });
 
-  document.getElementById("welcomeAddTeamBtn").addEventListener("click", ()=>{ openTeamModal(); });
+  document.getElementById("welcomeAddCompBtn").addEventListener("click", openCompModal);
 
-  document.getElementById("addTeamBtn").addEventListener("click", ()=>{ openTeamModal(); });
+  document.getElementById("addCompBtn").addEventListener("click", openCompModal);
+  document.getElementById("compClose").addEventListener("click", closeCompModal);
+  document.getElementById("compCreateBtn").addEventListener("click", createCompetitionFromModal);
+  document.getElementById("compBack").addEventListener("click", (e)=>{ if(e.target.id==="compBack") closeCompModal(); });
+
+  document.getElementById("deleteCompBtn").addEventListener("click", deleteCurrentCompetition);
+
+  document.getElementById("addTeamBtn").addEventListener("click", openTeamModal);
   document.getElementById("teamClose").addEventListener("click", closeTeamModal);
   document.getElementById("teamCreateBtn").addEventListener("click", createTeamFromModal);
   document.getElementById("teamBack").addEventListener("click", (e)=>{ if(e.target.id==="teamBack") closeTeamModal(); });
@@ -2027,27 +2247,34 @@
 
   document.getElementById("deleteTeamBtn").addEventListener("click", deleteCurrentTeam);
 
-  document.getElementById("teamName").addEventListener("input", e=>{
-    teamState.teamName = e.target.value;
-    const meta = currentTeamMeta();
-    meta.name = teamState.teamName || meta.name;
+  document.getElementById("compName").addEventListener("input", e=>{
+    const c = currentCompetition();
+    c.name = e.target.value;
     saveAll();
-    renderScores();
-    renderRoundSeg();
+    renderCompTabs();
+  });
+
+  document.getElementById("teamName").addEventListener("input", e=>{
+    const t = currentTeam();
+    t.name = e.target.value;
+    saveAll();
     renderTeamTabs();
+    renderScores();
+    renderPeriodTable();
   });
 
   document.getElementById("opponent").addEventListener("input", e=>{
-    currentGame().opponent = e.target.value;
-    saveAll(); renderScores(); renderPeriodTable(); renderRoundSeg();
+    const g = currentGame();
+    g.opponent = e.target.value;
+    saveAll(); renderScores(); renderPeriodTable();
   });
   document.getElementById("roundName").addEventListener("input", e=>{
     currentGame().roundName = e.target.value;
-    saveAll(); renderRoundSeg();
+    saveAll();
   });
   document.getElementById("gameDate").addEventListener("input", e=>{
     currentGame().gameDate = e.target.value;
-    saveAll(); renderRoundSeg();
+    saveAll();
   });
   document.getElementById("notes").addEventListener("input", e=>{
     currentGame().notes = e.target.value;
@@ -2061,7 +2288,8 @@
     const g = currentGame();
     if(confirm(`Reset only Game ${g.round}?`)) resetThisGame();
   });
-  document.getElementById("resetTeamBtn").addEventListener("click", resetTeamSeason);
+
+  document.getElementById("resetTeamBtn").addEventListener("click", resetTeam);
 
   document.getElementById("setLiveToEditingBtn").addEventListener("click", ()=>{
     const g = currentGame();
@@ -2079,6 +2307,8 @@
     if(!g.timerRunning && !isOTIndex(g.selectedP)){
       g.timerRemaining = g.baseMinutes * 60;
       g.timerLastTick = 0;
+      // reset halfway warning for that period when minutes changed
+      g.halfWarned[g.liveP] = false;
     }
     saveAll();
     renderAll();
@@ -2095,8 +2325,29 @@
   document.getElementById("gaPlus").addEventListener("click", ()=>scoreFromPosition("GA"));
   document.getElementById("undoBtn").addEventListener("click", undo);
 
-  document.getElementById("copySummaryBtn").addEventListener("click", ()=>copyText(buildGameSummaryText(currentGame())));
-  document.getElementById("copySeasonBtn").addEventListener("click", ()=>copyText(buildSeasonSummaryText()));
+  document.getElementById("copySummaryBtn").addEventListener("click", ()=>{
+    const t = currentTeam();
+    const g = currentGame();
+    const team = (t.name || "Home").trim() || "Home";
+    const opp  = (g.opponent || "Away").trim() || "Away";
+    const lines = [];
+    lines.push(`${currentCompetition().name} • ${team} • Game ${g.round}`);
+    if(g.gameDate) lines.push(`Date: ${g.gameDate}`);
+    if((g.roundName||"").trim()) lines.push(`Name: ${g.roundName.trim()}`);
+    lines.push(`${team} ${totalHome(g)} - ${totalAway(g)} ${opp}`);
+    lines.push("");
+    lines.push("Rotations:");
+    for(let p=0;p<totalPeriods(g);p++){
+      const a = g.periods[p].assignments || {};
+      const posText = POSITIONS.map(pos=>`${pos}: ${a[pos] ? (playerById(a[pos])?.name || "—") : "—"}`).join(" | ");
+      lines.push(`${periodLabel(p)}: ${posText}`);
+    }
+    if((g.notes||"").trim()){
+      lines.push("");
+      lines.push(`Notes: ${g.notes.trim()}`);
+    }
+    copyText(lines.join("\n"));
+  });
 
   document.getElementById("syncBtn").addEventListener("click", ()=>{
     document.getElementById("syncText").value = "";
@@ -2105,36 +2356,24 @@
   document.getElementById("syncClose").addEventListener("click", closeSyncModal);
   document.getElementById("syncBack").addEventListener("click", (e)=>{ if(e.target.id==="syncBack") closeSyncModal(); });
   document.getElementById("syncExport").addEventListener("click", exportTeam);
-  document.getElementById("syncImport").addEventListener("click", importTeam);
+  document.getElementById("syncImport").addEventListener("click", importTeamReplace);
   document.getElementById("syncClear").addEventListener("click", ()=>{ document.getElementById("syncText").value=""; });
 
   document.getElementById("addPlayerBtn").addEventListener("click", addPlayer);
 
-  /* =======================
-     SERVICE WORKER (so sw.js runs)
-  ======================= */
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js").catch(()=>{});
-    });
-  }
-
-  /* =======================
+  /* ===============================
      INIT
-  ======================= */
-  if(hasTeams()){
-    teamState = loadTeamState(teamsIndex.currentTeamId) || defaultTeamState(currentTeamMeta().format || "quarters");
-  }
-  ensureIntegrityAll();
-
+  =============================== */
+  ensureIntegrity();
   initRollups();
   renderAll();
 
   if(!hasSeenHowto()){
     openHowto();
-  } else if(!hasTeams()){
-    openTeamModal();
+  } else if(!hasCompetitions()){
+    openCompModal();
   }
+
 </script>
 </body>
 </html>
