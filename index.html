@@ -380,6 +380,7 @@
         <div style="font-weight:950; color:#111; margin:12px 0 6px;">Bench planning</div>
         <div>• Choose each bench player’s <b>Next</b> position.</div>
         <div>• Tap <b>Sub In</b> to put them straight into that position (swap happens automatically).</div>
+        <div>• Court-time shown in dropdown is <b>inferred from your pre-game plan</b>, but switches to <b>0.5</b> if a player is subbed.</div>
 
         <div style="font-weight:950; color:#111; margin:12px 0 6px;">Scoring</div>
         <div>• <b>Home/Away +1</b> adds a goal to the <b>Live</b> period.</div>
@@ -483,11 +484,10 @@
   const TOURN_DEFAULT  = 8;
   const LEAGUE_DEFAULT = 10;
 
-  const MIN_PLAYERS = 7;    // must have at least 7 to fill court
-  const MAX_PLAYERS = 15;   // your max
+  const MIN_PLAYERS = 7;
+  const MAX_PLAYERS = 15;
 
-  // NEW TEAM import buffer
-  let pendingImportedPlayers = null; // array of {name}
+  let pendingImportedPlayers = null;
 
   function safeJSONParse(raw){ try { return raw ? JSON.parse(raw) : null; } catch { return null; } }
   function loadTeamsIndex(){ return safeJSONParse(localStorage.getItem(TEAMS_INDEX_KEY)); }
@@ -552,11 +552,11 @@
       periods: Array.from({length:baseP}, ()=>emptyPeriod()),
       playerStats: initPlayerStats(players),
 
-      // NEW: bench planning (periodIndex -> { playerId -> "GS"/... })
       plannedPositions: {},
 
-      // halfway alerts per live period (quarters only; kept for safety/back-compat)
-      halfwayAlerted: {}
+      // NEW: per-period explicit credit (only used when Sub In happens)
+      // playCredits[pIdx][playerId] = 0.5  (we only write 0.5; inference still provides 1's)
+      playCredits: {}
     };
   }
 
@@ -652,9 +652,8 @@
         }
       }
 
-      // NEW: planned positions and halfway flags (back-compat)
       if(!g.plannedPositions) g.plannedPositions = {};
-      if(!g.halfwayAlerted) g.halfwayAlerted = {};
+      if(!g.playCredits) g.playCredits = {};
     }
   }
 
@@ -676,15 +675,7 @@
   }
   function totalPeriods(game){ return basePeriods(teamState.format) + (game.otCount || 0); }
   function regulationPeriodsForTeam(){ return basePeriods(teamState.format); }
-  function regulationPeriodsPlayed(game, playerId){
-    const max = regulationPeriodsForTeam();
-    let count = 0;
-    for(let i=0;i<max;i++){
-      const assigned = game.periods[i]?.assignments || {};
-      if(Object.values(assigned).includes(playerId)) count++;
-    }
-    return count;
-  }
+
   function playerById(id){ return teamState.players.find(p=>p.id===id); }
   function escapeHtml(str){ return (str||"").replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
   function assignedIdsForP(game, pIdx){
@@ -701,6 +692,43 @@
   function isOTIndex(idx){ return idx >= basePeriods(teamState.format); }
   function canStartOT(game){ return game.gameEnded && isDraw(game) && (game.otCount || 0) === 0; }
   function clamp0(n){ return Math.max(0, n); }
+
+  /* =======================
+     COURT-TIME DISPLAY (HYBRID)
+     - Planning: inferred from assignments (1 per regulation period if on court)
+     - Subs: if Sub In is used, both in/out get 0.5 credit for that period, overriding inference
+  ======================= */
+  function getPlayCredit(game, pIdx, playerId){
+    if(!game.playCredits) game.playCredits = {};
+    if(!game.playCredits[pIdx]) game.playCredits[pIdx] = {};
+    return Number(game.playCredits[pIdx][playerId] || 0);
+  }
+  function bumpPlayCredit(game, pIdx, playerId, val){
+    if(!game.playCredits) game.playCredits = {};
+    if(!game.playCredits[pIdx]) game.playCredits[pIdx] = {};
+    const cur = Number(game.playCredits[pIdx][playerId] || 0);
+    game.playCredits[pIdx][playerId] = Math.max(cur, val);
+  }
+  function inferredPlayedForPeriod(game, pIdx, playerId){
+    const assigned = Object.values(game.periods[pIdx]?.assignments || {}).filter(Boolean);
+    return assigned.includes(playerId) ? 1 : 0;
+  }
+  function regulationPeriodsPlayedHybrid(game, playerId){
+    const regMax = basePeriods(teamState.format);
+    let sum = 0;
+    for(let i=0;i<regMax;i++){
+      const credit = getPlayCredit(game, i, playerId);
+      if(credit > 0){
+        sum += credit;            // override inference for that period
+      } else {
+        sum += inferredPlayedForPeriod(game, i, playerId);
+      }
+    }
+    return sum;
+  }
+  function fmtPlayed(n){
+    return (Math.abs(n - Math.round(n)) < 1e-9) ? String(Math.round(n)) : n.toFixed(1);
+  }
 
   /* =======================
      BENCH PLANNING + QUICK SUB
@@ -725,8 +753,15 @@
     if(!pos) return alert("Set a Next position first.");
 
     const per = g.periods[pIdx];
+    const outgoing = per.assignments[pos] || null;
 
-    // put player into planned position (swap happens naturally because bench is derived)
+    // credit 0.5 (REGULATION ONLY) for the in/out when using Sub In
+    const regMax = basePeriods(teamState.format);
+    if(pIdx < regMax){
+      bumpPlayCredit(g, pIdx, playerId, 0.5);
+      if(outgoing && outgoing !== playerId) bumpPlayCredit(g, pIdx, outgoing, 0.5);
+    }
+
     per.assignments[pos] = playerId;
 
     // ensure player not in two positions
@@ -744,12 +779,13 @@
   /* ===== ADD / REMOVE PLAYERS ===== */
   function clearPlayerFromAssignments(pid){
     for(const g of teamState.games){
-      for(const per of g.periods){
+      for(let pi=0; pi<g.periods.length; pi++){
+        const per = g.periods[pi];
         for(const pos of POSITIONS){
           if(per.assignments?.[pos] === pid) per.assignments[pos] = null;
         }
+        if(g.playCredits?.[pi]?.[pid] != null) delete g.playCredits[pi][pid];
       }
-      // clean planned positions
       if(g.plannedPositions){
         for(const k of Object.keys(g.plannedPositions)){
           if(g.plannedPositions[k] && g.plannedPositions[k][pid] != null){
@@ -757,6 +793,7 @@
           }
         }
       }
+      if(g.playerStats) delete g.playerStats[pid];
     }
   }
 
@@ -789,11 +826,6 @@
     if(!ok) return;
 
     clearPlayerFromAssignments(pid);
-
-    for(const g of teamState.games){
-      if(g.playerStats) delete g.playerStats[pid];
-    }
-
     teamState.players = teamState.players.filter(x => x.id !== pid);
 
     saveAll();
@@ -885,8 +917,7 @@
     if(g.timerMode === "countdown"){
       g.timerRemaining = Math.max(0, g.timerRemaining - delta);
 
-      // NOTE: user requested NO halfway alert for halves games, so none here.
-      // (If you ever want it again for quarters only, we can re-add safely.)
+      // (No halfway alert for halves, as requested. None here.)
 
       if(g.timerRemaining === 0){
         g.timerRunning = false;
@@ -1048,15 +1079,22 @@
   function setAssignment(pos, pid){
     const g = currentGame();
     const pIdx = g.selectedP;
+    const per = g.periods[pIdx];
 
-    if(pid){
+    // NOTE: No play-credit changes here (so pre-game planning doesn’t create 0.5s).
+    // Credits only change via the Bench "Sub In" button.
+
+    // prevent same player in two positions
+    const next = pid || null;
+    if(next){
       for(const p of POSITIONS){
-        if(p !== pos && g.periods[pIdx].assignments[p] === pid){
-          g.periods[pIdx].assignments[p] = null;
+        if(p !== pos && per.assignments[p] === next){
+          per.assignments[p] = null;
         }
       }
     }
-    g.periods[pIdx].assignments[pos] = pid || null;
+
+    per.assignments[pos] = next;
     saveAll();
     renderAll();
   }
@@ -1168,7 +1206,6 @@
     teamsIndex.currentTeamId = id;
     saveTeamsIndex(teamsIndex);
 
-    // Use imported names if available (up to MAX_PLAYERS)
     let players;
     if(pendingImportedPlayers && pendingImportedPlayers.length){
       players = pendingImportedPlayers.slice(0, MAX_PLAYERS).map((p,i)=>({
@@ -1179,7 +1216,6 @@
       players = newPlayers10();
     }
 
-    // Ensure minimum 7
     while(players.length < MIN_PLAYERS){
       players.push({ id: crypto.randomUUID(), name: `Player ${players.length+1}` });
     }
@@ -1499,8 +1535,7 @@
       input.addEventListener("input", (e)=>{
         p.name = e.target.value;
         saveAll();
-
-        // IMPORTANT: do NOT rebuild player inputs on each keystroke
+        // Do NOT rebuild inputs per keystroke
         renderPositions();
         renderScores();
         renderStats();
@@ -1600,6 +1635,7 @@
     const grid = document.getElementById("positionsGrid");
     grid.innerHTML = "";
     const pIdx = g.selectedP;
+    const max = regulationPeriodsForTeam();
 
     POSITIONS.forEach(pos=>{
       const row = document.createElement("div");
@@ -1620,9 +1656,8 @@
       teamState.players.forEach(p=>{
         const opt = document.createElement("option");
         opt.value = p.id;
-        const played = regulationPeriodsPlayed(g, p.id);
-        const max = regulationPeriodsForTeam();
-        opt.textContent = `${p.name} • ${played}/${max}`;
+        const played = regulationPeriodsPlayedHybrid(g, p.id);
+        opt.textContent = `${p.name} • ${fmtPlayed(played)}/${max}`;
         sel.appendChild(opt);
       });
 
@@ -1693,14 +1728,18 @@
       return a.name.localeCompare(b.name);
     });
 
+    const max = regulationPeriodsForTeam();
+
     sorted.forEach(p=>{
       const gameGoals = g.playerStats[p.id]?.goalsTotal || 0;
+      const played = regulationPeriodsPlayedHybrid(g, p.id);
+
       const item = document.createElement("div");
       item.className = "pill";
       item.innerHTML = `
         <div>
           <div style="font-weight:950">${escapeHtml(p.name)}</div>
-          <div class="muted">Reg periods on court: ${regulationPeriodsPlayed(g, p.id)}/${regulationPeriodsForTeam()}</div>
+          <div class="muted">Reg periods on court: ${fmtPlayed(played)}/${max}</div>
         </div>
         <div class="right"><div><b>${gameGoals}</b> goals</div></div>
       `;
@@ -1907,7 +1946,6 @@
   document.getElementById("teamCreateBtn").addEventListener("click", createTeamFromModal);
   document.getElementById("teamBack").addEventListener("click", (e)=>{ if(e.target.id==="teamBack") closeTeamModal(); });
 
-  // import players inside Add Team modal
   document.getElementById("importPlayersBtn").addEventListener("click", importPlayersIntoNewTeam);
 
   document.getElementById("deleteTeamBtn").addEventListener("click", deleteCurrentTeam);
@@ -2006,7 +2044,6 @@
   initRollups();
   renderAll();
 
-  // show how-to first, then add-team
   if(!hasSeenHowto()){
     openHowto();
   } else if(!hasTeams()){
