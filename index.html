@@ -5,13 +5,72 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#111111" />
   <link rel="manifest" href="manifest.json">
-  <title>Netball Rotations</title>
+  <title>Bench Boss: Netball</title>
+
   <style>
     :root { --pad: 12px; --r: 14px; --b: 1px solid #ddd; }
+
     body { margin:0; font-family: -apple-system, system-ui, Segoe UI, Roboto, Arial; background:#f6f6f6; }
-    header { padding: var(--pad); background:#111; color:#fff; }
-    header h1 { margin:0; font-size:18px; }
-    header .sub { opacity:.85; font-size:13px; margin-top:4px; display:flex; gap:10px; flex-wrap:wrap; }
+
+    /* =========================
+       Catchy brand header
+    ========================== */
+    header{
+      padding: calc(var(--pad) + 2px);
+      color:#fff;
+      background:
+        radial-gradient(900px 220px at 10% 20%, rgba(255,255,255,.12), transparent 60%),
+        linear-gradient(135deg, #0b0b0b 0%, #121212 45%, #1a1a1a 100%);
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      box-shadow: 0 10px 24px rgba(0,0,0,.18);
+    }
+    header h1{
+      margin:0;
+      font-size:18px;
+      letter-spacing:.2px;
+    }
+    .brandRow{display:flex;align-items:center;gap:12px;min-width:0;}
+    .brandLogo{
+      width:40px;height:40px;border-radius:12px;
+      object-fit:cover;
+      background:rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.18);
+      box-shadow: 0 6px 14px rgba(0,0,0,.25);
+    }
+    .brandTitle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+    .badge{
+      font-size:11px;
+      padding:4px 8px;
+      border-radius:999px;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.16);
+      font-weight:950;
+      letter-spacing:.2px;
+    }
+    header .sub{
+      opacity:.92;
+      font-size:12px;
+      margin-top:6px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    header .sub .dot{opacity:.6;}
+    header .sub .byline{opacity:.85;font-weight:800;}
+
+    /* Make the How-to button fit the header */
+    #howtoBtn{
+      border-color: rgba(255,255,255,.25) !important;
+      color:#fff !important;
+      background: rgba(255,255,255,.10) !important;
+      backdrop-filter: blur(6px);
+    }
+    #howtoBtn:hover{ background: rgba(255,255,255,.14) !important; }
+
+    /* =========================
+       Main UI
+    ========================== */
     main { padding: var(--pad); display:grid; gap: var(--pad); }
     .card { background:#fff; border: var(--b); border-radius: var(--r); padding: var(--pad); }
     .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
@@ -110,17 +169,23 @@
 <body>
 <header>
   <div class="row" style="justify-content:space-between; align-items:center;">
-    <div>
-      <h1>Netball Rotations</h1>
-      <div class="sub">
-        <span>Teams • quarters/halves • always OT1+OT2 • OT2 play-on • timer • end/re-open</span>
-        <span id="saveState" class="muted"></span>
+    <div class="brandRow">
+      <img src="bb-netball.png" class="brandLogo" alt="Bench Boss logo">
+      <div>
+        <div class="brandTitle">
+          <h1>Bench Boss: Netball</h1>
+          <span class="badge">BETA</span>
+        </div>
+        <div class="sub">
+          <span>Rotations • scoring • timer • OT</span>
+          <span class="dot">•</span>
+          <span class="byline">Designed by Matt Watson</span>
+          <span id="saveState" class="muted"></span>
+        </div>
       </div>
     </div>
 
-    <button class="ghost small" id="howtoBtn" style="border-color:#444; color:#fff; background:transparent;">
-      How-to
-    </button>
+    <button class="ghost small" id="howtoBtn">How-to</button>
   </div>
 </header>
 
@@ -379,8 +444,8 @@
 
         <div style="font-weight:950; color:#111; margin:12px 0 6px;">Bench planning</div>
         <div>• Choose each bench player’s <b>Next</b> position.</div>
-        <div>• Tap <b>Sub In</b> to put them straight into that position (swap happens automatically).</div>
-        <div>• Court-time shown in dropdown is <b>inferred from your pre-game plan</b>, but switches to <b>0.5</b> if a player is subbed.</div>
+        <div>• Tap <b>Sub In</b> to put them straight into that position.</div>
+        <div>• Court time is shown everywhere. It’s <b>inferred from your plan</b> until you use <b>Sub In</b>, then it can switch to <b>0.5</b>.</div>
 
         <div style="font-weight:950; color:#111; margin:12px 0 6px;">Scoring</div>
         <div>• <b>Home/Away +1</b> adds a goal to the <b>Live</b> period.</div>
@@ -554,8 +619,7 @@
 
       plannedPositions: {},
 
-      // NEW: per-period explicit credit (only used when Sub In happens)
-      // playCredits[pIdx][playerId] = 0.5  (we only write 0.5; inference still provides 1's)
+      // playCredits[pIdx][playerId] = 0.5 when you use "Sub In"
       playCredits: {}
     };
   }
@@ -696,7 +760,7 @@
   /* =======================
      COURT-TIME DISPLAY (HYBRID)
      - Planning: inferred from assignments (1 per regulation period if on court)
-     - Subs: if Sub In is used, both in/out get 0.5 credit for that period, overriding inference
+     - Subs: when Sub In used, in/out get 0.5 credit for that period, overriding inference
   ======================= */
   function getPlayCredit(game, pIdx, playerId){
     if(!game.playCredits) game.playCredits = {};
@@ -718,11 +782,7 @@
     let sum = 0;
     for(let i=0;i<regMax;i++){
       const credit = getPlayCredit(game, i, playerId);
-      if(credit > 0){
-        sum += credit;            // override inference for that period
-      } else {
-        sum += inferredPlayedForPeriod(game, i, playerId);
-      }
+      sum += credit > 0 ? credit : inferredPlayedForPeriod(game, i, playerId);
     }
     return sum;
   }
@@ -755,7 +815,7 @@
     const per = g.periods[pIdx];
     const outgoing = per.assignments[pos] || null;
 
-    // credit 0.5 (REGULATION ONLY) for the in/out when using Sub In
+    // credit 0.5 (REGULATION ONLY) for in/out when using Sub In
     const regMax = basePeriods(teamState.format);
     if(pIdx < regMax){
       bumpPlayCredit(g, pIdx, playerId, 0.5);
@@ -917,8 +977,6 @@
     if(g.timerMode === "countdown"){
       g.timerRemaining = Math.max(0, g.timerRemaining - delta);
 
-      // (No halfway alert for halves, as requested. None here.)
-
       if(g.timerRemaining === 0){
         g.timerRunning = false;
         stopTimerLoop();
@@ -926,6 +984,7 @@
         const base = basePeriods(teamState.format);
         const ot2Index = base + 1;
 
+        // OT2 play-on if still tied at 0
         if(g.otCount === 2 && g.liveP === ot2Index && isDraw(g)){
           g.timerMode = "countup";
           g.timerExtraElapsed = 0;
@@ -1081,10 +1140,6 @@
     const pIdx = g.selectedP;
     const per = g.periods[pIdx];
 
-    // NOTE: No play-credit changes here (so pre-game planning doesn’t create 0.5s).
-    // Credits only change via the Bench "Sub In" button.
-
-    // prevent same player in two positions
     const next = pid || null;
     if(next){
       for(const p of POSITIONS){
@@ -1141,6 +1196,7 @@
     const ot2Index = base + 1;
     const lastIndex = totalPeriods(g) - 1;
 
+    // always go to OT2 after OT1
     if(g.otCount === 2 && g.liveP === ot1Index){
       g.liveP = ot2Index;
       g.selectedP = ot2Index;
@@ -1150,6 +1206,7 @@
       return;
     }
 
+    // if last period -> end
     if(g.liveP >= lastIndex){
       g.gameEnded = true;
       g.timerRunning = false;
@@ -1532,11 +1589,17 @@
       `;
 
       const input = div.querySelector("input");
+
+      /* ✅ Auto-select full name on tap/focus */
+      input.addEventListener("focus", () => setTimeout(() => input.select(), 0));
+      input.addEventListener("click", () => setTimeout(() => input.select(), 0));
+
       input.addEventListener("input", (e)=>{
         p.name = e.target.value;
         saveAll();
-        // Do NOT rebuild inputs per keystroke
+        // don't rebuild player inputs per keystroke (prevents “clicking out”)
         renderPositions();
+        renderBench();
         renderScores();
         renderStats();
         renderAllPeriodsPositions();
@@ -1670,6 +1733,7 @@
     });
   }
 
+  /* ✅ Bench shows court time + planning + Sub In */
   function renderBench(){
     const g = currentGame();
     const list = document.getElementById("benchList");
@@ -1679,12 +1743,19 @@
     const bench = benchPlayersForP(g, pIdx);
     document.getElementById("benchCount").textContent = `${bench.length} on bench`;
 
+    const max = regulationPeriodsForTeam();
+
     bench.forEach(p=>{
       const item = document.createElement("div");
       item.className = "pill";
 
+      const played = regulationPeriodsPlayedHybrid(g, p.id);
+
       const left = document.createElement("div");
-      left.textContent = p.name;
+      left.innerHTML = `
+        <div style="font-weight:950">${escapeHtml(p.name)}</div>
+        <div class="muted">On court: ${fmtPlayed(played)}/${max}</div>
+      `;
 
       const right = document.createElement("div");
       right.style.display = "flex";
