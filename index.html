@@ -35,7 +35,7 @@
     .posTag { width:54px; min-width:54px; text-align:center; padding:8px 0; border-radius:10px; background:#f0f0f0; border: var(--b); font-weight:950; }
     .muted { color:#666; font-size:13px; }
     .list { display:grid; gap:8px; }
-    .pill { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border: var(--b); border-radius: 12px; background:#fff; }
+    .pill { display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border: var(--b); border-radius: 12px; background:#fff; gap:10px; }
     .right { text-align:right; }
     .kbd { font-family: ui-monospace, Menlo, monospace; font-size:12px; padding:2px 6px; border-radius:8px; background:#eee; border:1px solid #ddd; }
     table { width:100%; border-collapse:collapse; }
@@ -82,7 +82,7 @@
     .finalBanner .small{ font-size:12px; font-weight:900; opacity:.85; }
     .finalBanner .big{ font-size:18px; font-weight:950; margin-top:4px; }
 
-    /* Roll-up button (LEFT of heading) */
+    /* Roll-up */
     .rollBtn{
       border:1px solid #ddd;
       background:#fff;
@@ -94,7 +94,7 @@
     }
     .card.collapsed .rollBody{ display:none; }
 
-    /* Player remove button */
+    /* Player remove */
     .miniDanger{
       border:1px solid #c62828;
       color:#c62828;
@@ -113,7 +113,7 @@
     <div>
       <h1>Netball Rotations</h1>
       <div class="sub">
-        <span>Teams • quarters/halves • always OT1+OT2 • OT2 play-on • timer rules • end/re-open</span>
+        <span>Teams • quarters/halves • always OT1+OT2 • OT2 play-on • timer • end/re-open</span>
         <span id="saveState" class="muted"></span>
       </div>
     </div>
@@ -130,8 +130,8 @@
     <div style="font-weight:950; font-size:18px;">Welcome 👋</div>
     <div class="muted" style="margin-top:6px;">
       To begin, tap <b>+ Add Team</b>.<br>
-      Choose <b>4 quarters (league)</b> or <b>2 halves (tournament)</b>.<br>
-      You can create multiple teams and switch using the tabs.
+      Choose <b>4 quarters</b> (league) or <b>2 halves</b> (tournament).<br>
+      Switch teams using the tabs.
     </div>
     <div style="height:10px"></div>
     <button class="primary" id="welcomeAddTeamBtn">+ Add Team</button>
@@ -373,22 +373,20 @@
 
       <div class="muted">
         <div style="font-weight:950; color:#111; margin:10px 0 6px;">Editing vs Live</div>
-        <div>• <b>Editing</b> period = set on-court positions + bench.</div>
+        <div>• <b>Editing</b> period = set on-court positions + bench plan.</div>
         <div>• <b>Live</b> period = where scoring + undo applies.</div>
         <div>• Use <b>Set live = editing</b> to align them.</div>
+
+        <div style="font-weight:950; color:#111; margin:12px 0 6px;">Bench planning</div>
+        <div>• Choose each bench player’s <b>Next</b> position.</div>
+        <div>• Tap <b>Sub In</b> to put them straight into that position (swap happens automatically).</div>
 
         <div style="font-weight:950; color:#111; margin:12px 0 6px;">Scoring</div>
         <div>• <b>Home/Away +1</b> adds a goal to the <b>Live</b> period.</div>
         <div>• <b>+GS / +GA</b> credits the player assigned to GS/GA in the <b>Live</b> period.</div>
-        <div>• <b>Undo</b> removes the last scoring event in the <b>Live</b> period.</div>
 
-        <div style="font-weight:950; color:#111; margin:12px 0 6px;">Timer</div>
-        <div>• League minutes: 10 / 12 / 15 (default 10).</div>
-        <div>• Tournament minutes: 5–10 (default 8).</div>
-
-        <div style="font-weight:950; color:#111; margin:12px 0 6px;">End game + Overtime</div>
-        <div>• <b>End game</b> locks scoring.</div>
-        <div>• If tied, start <b>OT</b> → this app plays <b>OT1 and OT2 always</b>.</div>
+        <div style="font-weight:950; color:#111; margin:12px 0 6px;">Overtime</div>
+        <div>• If tied at end, start <b>OT</b> → this app plays <b>OT1 and OT2 always</b>.</div>
         <div>• In <b>OT2</b>, if time hits 0 and still tied → flips to <b>play-on</b> until a team leads by <b>2</b> (auto-end).</div>
         <div>• Use <b>Re-open game</b> if you ended by mistake.</div>
       </div>
@@ -450,13 +448,13 @@
             <input type="radio" name="newFormat" value="halves" />
             <span><b>2 halves</b> (tournament)</span>
           </label>
-          <div class="muted">Tournament defaults to <b>8 min</b>. League defaults to <b>10 min</b>. OT defaults to <b>3 min</b>.</div>
+          <div class="muted">Tournament default <b>8 min</b>. League default <b>10 min</b>. OT default <b>3 min</b>.</div>
         </div>
       </div>
 
       <div style="height:12px"></div>
 
-      <!-- IMPORT PLAYERS (OPTIONAL) -->
+      <!-- IMPORT PLAYERS -->
       <div class="row">
         <div class="grow">
           <div class="muted">Import players from (optional)</div>
@@ -552,7 +550,13 @@
       timerExtraElapsed: 0,
 
       periods: Array.from({length:baseP}, ()=>emptyPeriod()),
-      playerStats: initPlayerStats(players)
+      playerStats: initPlayerStats(players),
+
+      // NEW: bench planning (periodIndex -> { playerId -> "GS"/... })
+      plannedPositions: {},
+
+      // halfway alerts per live period (quarters only; kept for safety/back-compat)
+      halfwayAlerted: {}
     };
   }
 
@@ -647,6 +651,10 @@
           while(g.playerStats[p.id].goalsByP.length < 6) g.playerStats[p.id].goalsByP.push(0);
         }
       }
+
+      // NEW: planned positions and halfway flags (back-compat)
+      if(!g.plannedPositions) g.plannedPositions = {};
+      if(!g.halfwayAlerted) g.halfwayAlerted = {};
     }
   }
 
@@ -694,12 +702,59 @@
   function canStartOT(game){ return game.gameEnded && isDraw(game) && (game.otCount || 0) === 0; }
   function clamp0(n){ return Math.max(0, n); }
 
+  /* =======================
+     BENCH PLANNING + QUICK SUB
+  ======================= */
+  function getPlannedPos(game, pIdx, playerId){
+    if(!game.plannedPositions) game.plannedPositions = {};
+    if(!game.plannedPositions[pIdx]) game.plannedPositions[pIdx] = {};
+    return game.plannedPositions[pIdx][playerId] || "";
+  }
+
+  function setPlannedPos(game, pIdx, playerId, pos){
+    if(!game.plannedPositions) game.plannedPositions = {};
+    if(!game.plannedPositions[pIdx]) game.plannedPositions[pIdx] = {};
+    game.plannedPositions[pIdx][playerId] = pos || "";
+    saveAll();
+  }
+
+  function subInFromBench(playerId){
+    const g = currentGame();
+    const pIdx = g.selectedP; // editing period
+    const pos = getPlannedPos(g, pIdx, playerId);
+    if(!pos) return alert("Set a Next position first.");
+
+    const per = g.periods[pIdx];
+
+    // put player into planned position (swap happens naturally because bench is derived)
+    per.assignments[pos] = playerId;
+
+    // ensure player not in two positions
+    for(const p of POSITIONS){
+      if(p !== pos && per.assignments[p] === playerId) per.assignments[p] = null;
+    }
+
+    // clear plan after use
+    setPlannedPos(g, pIdx, playerId, "");
+
+    saveAll();
+    renderAll();
+  }
+
   /* ===== ADD / REMOVE PLAYERS ===== */
   function clearPlayerFromAssignments(pid){
     for(const g of teamState.games){
       for(const per of g.periods){
         for(const pos of POSITIONS){
           if(per.assignments?.[pos] === pid) per.assignments[pos] = null;
+        }
+      }
+      // clean planned positions
+      if(g.plannedPositions){
+        for(const k of Object.keys(g.plannedPositions)){
+          if(g.plannedPositions[k] && g.plannedPositions[k][pid] != null){
+            delete g.plannedPositions[k][pid];
+          }
         }
       }
     }
@@ -829,6 +884,9 @@
 
     if(g.timerMode === "countdown"){
       g.timerRemaining = Math.max(0, g.timerRemaining - delta);
+
+      // NOTE: user requested NO halfway alert for halves games, so none here.
+      // (If you ever want it again for quarters only, we can re-add safely.)
 
       if(g.timerRemaining === 0){
         g.timerRunning = false;
@@ -1252,13 +1310,12 @@
     const src = loadTeamState(teamId);
     if(!src?.players?.length) return alert("That team has no players saved.");
 
-    // Import ALL names (but your declared MAX_PLAYERS is 15)
     let names = src.players
       .map(p => ({ name: (p.name || "").trim() }))
       .filter(p => p.name.length > 0);
 
     if(names.length > MAX_PLAYERS){
-      alert(`That team has ${names.length} players. This app is set to max ${MAX_PLAYERS}, so only the first ${MAX_PLAYERS} will be imported.`);
+      alert(`That team has ${names.length} players. Max is ${MAX_PLAYERS}, so only the first ${MAX_PLAYERS} will be imported.`);
       names = names.slice(0, MAX_PLAYERS);
     }
 
@@ -1582,12 +1639,44 @@
     const g = currentGame();
     const list = document.getElementById("benchList");
     list.innerHTML = "";
-    const bench = benchPlayersForP(g, g.selectedP);
+
+    const pIdx = g.selectedP;
+    const bench = benchPlayersForP(g, pIdx);
     document.getElementById("benchCount").textContent = `${bench.length} on bench`;
+
     bench.forEach(p=>{
       const item = document.createElement("div");
       item.className = "pill";
-      item.innerHTML = `<div>${escapeHtml(p.name)}</div><div class="muted">—</div>`;
+
+      const left = document.createElement("div");
+      left.textContent = p.name;
+
+      const right = document.createElement("div");
+      right.style.display = "flex";
+      right.style.gap = "8px";
+      right.style.alignItems = "center";
+
+      const planned = getPlannedPos(g, pIdx, p.id);
+
+      const sel = document.createElement("select");
+      sel.innerHTML = `
+        <option value="">Next: —</option>
+        ${POSITIONS.map(pos=>`<option value="${pos}">Next: ${pos}</option>`).join("")}
+      `;
+      sel.value = planned;
+      sel.addEventListener("change", ()=> setPlannedPos(g, pIdx, p.id, sel.value));
+
+      const btn = document.createElement("button");
+      btn.className = "primary small";
+      btn.textContent = "Sub In";
+      btn.addEventListener("click", ()=> subInFromBench(p.id));
+
+      right.appendChild(sel);
+      right.appendChild(btn);
+
+      item.appendChild(left);
+      item.appendChild(right);
+
       list.appendChild(item);
     });
   }
