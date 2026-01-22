@@ -258,17 +258,18 @@
   </section>
 
   <!-- PLAYERS -->
-  <section class="card" id="setupCard">
-    <div class="row">
-      <div class="grow">
-        <div style="font-weight:950;margin-bottom:6px;">Players (for this team)</div>
-        <div class="muted">Add/remove up to 15. Minimum 7.</div>
-      </div>
-      <button class="primary small" id="addPlayerBtn">+ Player</button>
+<section class="card" id="setupCard">
+  <div class="row">
+    <div class="grow">
+      <div style="font-weight:950;margin-bottom:6px;">Players (for this team)</div>
+      <div class="muted">Tap to edit names + preferred positions</div>
     </div>
-    <div style="height:10px"></div>
-    <div class="row" id="playersInputs" style="display:grid; grid-template-columns: 1fr; gap:10px;"></div>
-  </section>
+    <button class="primary small" id="editPlayersBtn">Edit Players</button>
+  </div>
+
+  <div style="height:10px"></div>
+  <div class="muted" id="playersQuickSummary"></div>
+</section>
 
   <!-- PERIOD / SCORE / TIMER -->
   <section class="card" id="periodCard">
@@ -544,6 +545,37 @@
       <button class="primary" id="teamCreateBtn">Create Team</button>
     </div>
   </div>
+<!-- PLAYERS MODAL -->
+<div class="modalBack" id="playersBack">
+  <div class="modal">
+    <div class="row">
+      <h3 class="grow">Players</h3>
+      <button class="ghost small" id="playersClose">Close</button>
+    </div>
+
+    <div class="muted" style="margin-bottom:10px;">
+      Enter player name and up to 2 preferred positions
+    </div>
+
+    <table class="playersTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Pos 1</th>
+          <th>Pos 2</th>
+          <th>Del</th>
+        </tr>
+      </thead>
+      <tbody id="playersTableBody"></tbody>
+    </table>
+
+    <div class="row" style="margin-top:12px;">
+      <button class="ghost small" id="playersAddRow">+ Add</button>
+      <div class="grow"></div>
+      <button class="primary small" id="playersSave">Save</button>
+    </div>
+  </div>
+</div>
 </main>
 
 <script>
@@ -852,14 +884,38 @@
     const assigned = Object.values(game.periods[pIdx]?.assignments || {}).filter(Boolean);
     return assigned.includes(playerId) ? 1 : 0;
   }
+  
   function regulationPeriodsPlayedHybrid(game, playerId){
-    const c = currentCompetition();
-    const regMax = basePeriods(c.format);
-    let sum = 0;
-    for(let i=0;i<regMax;i++){
-      const credit = getPlayCredit(game, i, playerId);
-      sum += credit > 0 ? credit : inferredPlayedForPeriod(game, i, playerId);
-    }
+  const regMax = basePeriods(teamState.format);
+  let sum = 0;
+  for(let i=0;i<regMax;i++){
+    const credit = getPlayCredit(game, i, playerId);
+    sum += credit > 0 ? credit : inferredPlayedForPeriod(game, i, playerId);
+  }
+  return sum;
+}
+
+// ===== Tournament totals (V1 extension) =====
+function tournamentTotalHalvesForPlayer(playerId){
+  const c = currentCompetition();
+  const t = currentTeam();
+  if(!c || !t) return 0;
+  if(c.format !== "halves") return 0;
+
+  let total = 0;
+  for(const game of (t.games || [])){
+    total += regulationPeriodsPlayedHybrid(game, playerId);
+  }
+  return total;
+}
+
+function tournamentMaxHalves(){
+  const c = currentCompetition();
+  const t = currentTeam();
+  if(!c || !t) return 0;
+  if(c.format !== "halves") return 0;
+  return (t.games?.length || 0) * 2;
+}
     return sum;
   }
   function fmtPlayed(n){
