@@ -618,7 +618,12 @@
      DATA MODEL (Competition → Team → Games)
   =============================== */
   function newPlayers10(){
-    return Array.from({length:10}, (_,i)=>({ id: crypto.randomUUID(), name: `Player ${i+1}` }));
+    return Array.from({length:10}, (_,i)=>({
+      id: crypto.randomUUID(),
+      name: `Player ${i+1}`,
+      pos1: "",
+      pos2: ""
+    }));
   }
 
   function initPlayerStats(players){
@@ -1416,14 +1421,16 @@ function tournamentMaxHalves(){
     if(pendingImportedPlayers && pendingImportedPlayers.length){
       players = pendingImportedPlayers.slice(0, MAX_PLAYERS).map((p,i)=>({
         id: crypto.randomUUID(),
-        name: p.name || `Player ${i+1}`
+        name: p.name || `Player ${i+1}`,
+        pos1: p.pos1 || "",
+        pos2: p.pos2 || ""
       }));
     } else {
       players = newPlayers10();
     }
 
     while(players.length < MIN_PLAYERS){
-      players.push({ id: crypto.randomUUID(), name: `Player ${players.length+1}` });
+      players.push({ id: crypto.randomUUID(), name: `Player ${players.length+1}`, pos1:"", pos2:"" });
     }
 
     const team = {
@@ -1817,66 +1824,126 @@ function tournamentMaxHalves(){
     }
   }
 
-  function renderPlayersInputs(){
-  const t = currentTeam();
-  const wrap = document.getElementById("playersInputs");
-  if(!t || !wrap) return;
-
-  wrap.innerHTML = "";
-  wrap.style.gridTemplateColumns = (window.innerWidth >= 780) ? "1fr 1fr" : "1fr";
-
-  t.players.forEach((p, idx)=>{
-    const div = document.createElement("div");
-    div.className = "row";
-
-    const left = document.createElement("div");
-    left.className = "grow";
-
-    const lab = document.createElement("div");
-    lab.className = "muted";
-    lab.textContent = `Player ${idx+1}`;
-
-    const input = document.createElement("input");
-    input.type = "text";
-    input.value = p.name || "";
-    input.dataset.pid = p.id;
-
-    // iOS-friendly: tap selects text
-    input.addEventListener("focus", () => setTimeout(() => input.select(), 0));
-    input.addEventListener("click",  () => setTimeout(() => input.select(), 0));
-
-    // update model as you type (no full re-render)
-    input.addEventListener("input", ()=>{
-      p.name = input.value;
-      saveAll();
-      renderPositions();
-      renderBench();
-      renderScores();
-      renderStats();
-      renderAllPeriodsPositions();
+  function renderPlayersQuickSummary(){
+    const t = currentTeam();
+    const el = document.getElementById("playersQuickSummary");
+    if(!t || !el) return;
+    const named = t.players.filter(p => (p.name||"").trim().length > 0);
+    if(named.length === 0){
+      el.textContent = "No players yet.";
+      return;
+    }
+    const lines = named.map(p=>{
+      const p1 = (p.pos1||"").trim();
+      const p2 = (p.pos2||"").trim();
+      const prefs = [p1,p2].filter(Boolean).join(", ");
+      return prefs ? `${p.name} (${prefs})` : p.name;
     });
+    el.textContent = lines.join(" • ");
+  }
 
-    // extra safety: save on blur as well
-    input.addEventListener("blur", ()=>{
-      p.name = input.value;
-      saveAll();
+  function openPlayersModal(){
+    const t = currentTeam();
+    if(!t) return;
+    // ensure fields exist
+    t.players.forEach(p=>{ if(p.pos1==null) p.pos1=""; if(p.pos2==null) p.pos2=""; });
+    renderPlayersModalTable();
+    document.getElementById("playersBack").style.display = "flex";
+  }
+  function closePlayersModal(){
+    document.getElementById("playersBack").style.display = "none";
+  }
+
+  function renderPlayersModalTable(){
+    const t = currentTeam();
+    const body = document.getElementById("playersTableBody");
+    if(!t || !body) return;
+    body.innerHTML = "";
+
+    t.players.forEach((p)=>{
+      const tr = document.createElement("tr");
+
+      const tdName = document.createElement("td");
+      const inp = document.createElement("input");
+      inp.type = "text";
+      inp.value = p.name || "";
+      inp.style.width = "100%";
+      inp.addEventListener("focus", ()=> setTimeout(()=> inp.select(), 0));
+      inp.addEventListener("click",  ()=> setTimeout(()=> inp.select(), 0));
+      inp.addEventListener("input", ()=>{ p.name = inp.value; });
+      tdName.appendChild(inp);
+
+      function buildPosSelect(which){
+        const sel = document.createElement("select");
+        sel.innerHTML = `<option value="">—</option>` + POSITIONS.map(x=>`<option value="${x}">${x}</option>`).join("");
+        sel.value = (which==="pos1") ? (p.pos1||"") : (p.pos2||"");
+        sel.addEventListener("change", ()=>{
+          if(which==="pos1") p.pos1 = sel.value;
+          else p.pos2 = sel.value;
+        });
+        return sel;
+      }
+
+      const tdP1 = document.createElement("td");
+      tdP1.appendChild(buildPosSelect("pos1"));
+
+      const tdP2 = document.createElement("td");
+      tdP2.appendChild(buildPosSelect("pos2"));
+
+      const tdDel = document.createElement("td");
+      const del = document.createElement("button");
+      del.className = "miniDanger";
+      del.type = "button";
+      del.textContent = "−";
+      del.title = "Remove player";
+      del.addEventListener("click", ()=>{
+        if(t.players.length <= MIN_PLAYERS){
+          alert(`You must keep at least ${MIN_PLAYERS} players (to cover 7 on court).`);
+          return;
+        }
+        const name = (p.name||"this player").trim() || "this player";
+        if(!confirm(`Remove ${name} from this team?
+
+This will also remove them from all on-court selections + stats for this team.`)) return;
+        clearPlayerFromTeam(p.id);
+        t.players = t.players.filter(x=>x.id !== p.id);
+        saveAll();
+        renderPlayersModalTable();
+        renderAll();
+      });
+      tdDel.appendChild(del);
+
+      tr.appendChild(tdName);
+      tr.appendChild(tdP1);
+      tr.appendChild(tdP2);
+      tr.appendChild(tdDel);
+      body.appendChild(tr);
     });
+  }
 
-    left.appendChild(lab);
-    left.appendChild(input);
+  function playersAddRow(){
+    const t = currentTeam();
+    if(!t) return;
+    if(t.players.length >= MAX_PLAYERS) return alert(`Max players is ${MAX_PLAYERS}.`);
+    const p = { id: crypto.randomUUID(), name: `Player ${t.players.length+1}`, pos1:"", pos2:"" };
+    t.players.push(p);
 
-    const delBtn = document.createElement("button");
-    delBtn.className = "miniDanger";
-    delBtn.type = "button";
-    delBtn.title = "Remove player";
-    delBtn.textContent = "−";
-    delBtn.addEventListener("click", ()=> removePlayer(p.id));
+    for(const g of t.games){
+      if(!g.playerStats) g.playerStats = {};
+      g.playerStats[p.id] = { goalsTotal:0, goalsByP:Array.from({length:6}, ()=>0) };
+    }
 
-    div.appendChild(left);
-    div.appendChild(delBtn);
-    wrap.appendChild(div);
-  });
-}
+    saveAll();
+    renderPlayersModalTable();
+    renderAll();
+  }
+
+  function playersSaveAndClose(){
+    // persist what is currently in memory, then close
+    saveAll();
+    closePlayersModal();
+    renderAll();
+  }
 
   function renderPeriodSeg(){
     const g = currentGame();
@@ -2286,7 +2353,7 @@ if(c.format === "halves"){
 
     renderGameHeader();
     renderRoundSeg();
-    renderPlayersInputs();
+    renderPlayersQuickSummary();
     renderPeriodSeg();
     renderMinutesSelect();
     renderTimer();
@@ -2327,6 +2394,13 @@ if(c.format === "halves"){
   document.getElementById("teamBack").addEventListener("click", (e)=>{ if(e.target.id==="teamBack") closeTeamModal(); });
 
   document.getElementById("importPlayersBtn").addEventListener("click", importPlayersIntoNewTeam);
+
+  // Players modal
+  document.getElementById("editPlayersBtn").addEventListener("click", openPlayersModal);
+  document.getElementById("playersClose").addEventListener("click", playersSaveAndClose);
+  document.getElementById("playersAddRow").addEventListener("click", playersAddRow);
+  document.getElementById("playersSave").addEventListener("click", playersSaveAndClose);
+  document.getElementById("playersBack").addEventListener("click", (e)=>{ if(e.target.id==="playersBack") playersSaveAndClose(); });
 
   document.getElementById("deleteTeamBtn").addEventListener("click", deleteCurrentTeam);
 
@@ -2441,9 +2515,6 @@ if(c.format === "halves"){
   document.getElementById("syncExport").addEventListener("click", exportTeam);
   document.getElementById("syncImport").addEventListener("click", importTeamReplace);
   document.getElementById("syncClear").addEventListener("click", ()=>{ document.getElementById("syncText").value=""; });
-
-  document.getElementById("addPlayerBtn").addEventListener("click", addPlayer);
-
   /* ===============================
      INIT
   =============================== */
