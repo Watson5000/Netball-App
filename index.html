@@ -1818,46 +1818,65 @@ function tournamentMaxHalves(){
   }
 
   function renderPlayersInputs(){
-    const t = currentTeam();
-    const wrap = document.getElementById("playersInputs");
-    wrap.innerHTML = "";
-    wrap.style.gridTemplateColumns = (window.innerWidth >= 780) ? "1fr 1fr" : "1fr";
+  const t = currentTeam();
+  const wrap = document.getElementById("playersInputs");
+  if(!t || !wrap) return;
 
-    t.players.forEach((p, idx)=>{
-      const div = document.createElement("div");
-      div.className = "row";
+  wrap.innerHTML = "";
+  wrap.style.gridTemplateColumns = (window.innerWidth >= 780) ? "1fr 1fr" : "1fr";
 
-      div.innerHTML = `
-        <div class="grow">
-          <div class="muted">Player ${idx+1}</div>
-          <input type="text" value="${escapeHtml(p.name)}" data-pid="${p.id}" />
-        </div>
-        <button class="miniDanger" type="button" title="Remove player">−</button>
-      `;
+  t.players.forEach((p, idx)=>{
+    const div = document.createElement("div");
+    div.className = "row";
 
-      const input = div.querySelector("input");
+    const left = document.createElement("div");
+    left.className = "grow";
 
-      // ✅ Auto-select full name on tap/focus
-      input.addEventListener("focus", () => setTimeout(() => input.select(), 0));
-      input.addEventListener("click", () => setTimeout(() => input.select(), 0));
+    const lab = document.createElement("div");
+    lab.className = "muted";
+    lab.textContent = `Player ${idx+1}`;
 
-      input.addEventListener("input", (e)=>{
-        p.name = e.target.value;
-        saveAll();
-        // IMPORTANT: do NOT rebuild player inputs on every keystroke
-        renderPositions();
-        renderBench();
-        renderScores();
-        renderStats();
-        renderAllPeriodsPositions();
-      });
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = p.name || "";
+    input.dataset.pid = p.id;
 
-      const delBtn = div.querySelector("button.miniDanger");
-      delBtn.addEventListener("click", ()=> removePlayer(p.id));
+    // iOS-friendly: tap selects text
+    input.addEventListener("focus", () => setTimeout(() => input.select(), 0));
+    input.addEventListener("click",  () => setTimeout(() => input.select(), 0));
 
-      wrap.appendChild(div);
+    // update model as you type (no full re-render)
+    input.addEventListener("input", ()=>{
+      p.name = input.value;
+      saveAll();
+      renderPositions();
+      renderBench();
+      renderScores();
+      renderStats();
+      renderAllPeriodsPositions();
     });
-  }
+
+    // extra safety: save on blur as well
+    input.addEventListener("blur", ()=>{
+      p.name = input.value;
+      saveAll();
+    });
+
+    left.appendChild(lab);
+    left.appendChild(input);
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "miniDanger";
+    delBtn.type = "button";
+    delBtn.title = "Remove player";
+    delBtn.textContent = "−";
+    delBtn.addEventListener("click", ()=> removePlayer(p.id));
+
+    div.appendChild(left);
+    div.appendChild(delBtn);
+    wrap.appendChild(div);
+  });
+}
 
   function renderPeriodSeg(){
     const g = currentGame();
