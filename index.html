@@ -884,22 +884,23 @@
     const assigned = Object.values(game.periods[pIdx]?.assignments || {}).filter(Boolean);
     return assigned.includes(playerId) ? 1 : 0;
   }
-  
   function regulationPeriodsPlayedHybrid(game, playerId){
-  const regMax = basePeriods(teamState.format);
-  let sum = 0;
-  for(let i=0;i<regMax;i++){
-    const credit = getPlayCredit(game, i, playerId);
-    sum += credit > 0 ? credit : inferredPlayedForPeriod(game, i, playerId);
+    const c = currentCompetition();
+    const regMax = basePeriods(c.format);
+    let sum = 0;
+    for(let i=0;i<regMax;i++){
+      const credit = getPlayCredit(game, i, playerId);
+      sum += credit > 0 ? credit : inferredPlayedForPeriod(game, i, playerId);
+    }
+    return sum;
   }
-  return sum;
-}
-
-// ===== Tournament totals (V1 extension) =====
+  // ===== Tournament totals (V1 extension) =====
 function tournamentTotalHalvesForPlayer(playerId){
   const c = currentCompetition();
   const t = currentTeam();
   if(!c || !t) return 0;
+
+  // Only apply in tournament format
   if(c.format !== "halves") return 0;
 
   let total = 0;
@@ -914,10 +915,10 @@ function tournamentMaxHalves(){
   const t = currentTeam();
   if(!c || !t) return 0;
   if(c.format !== "halves") return 0;
+
+  // 2 halves per game
   return (t.games?.length || 0) * 2;
 }
-    return sum;
-  }
   function fmtPlayed(n){
     return (Math.abs(n - Math.round(n)) < 1e-9) ? String(Math.round(n)) : n.toFixed(1);
   }
@@ -2059,14 +2060,21 @@ function tournamentMaxHalves(){
 
     sorted.forEach(p=>{
       const gameGoals = g.playerStats[p.id]?.goalsTotal || 0;
-      const played = regulationPeriodsPlayedHybrid(g, p.id);
+      const playedThisGame = regulationPeriodsPlayedHybrid(g, p.id);
+	  let subLine = `Reg periods on court: ${fmtPlayed(playedThisGame)}/${max}`;
+
+if(c.format === "halves"){
+  const tourTotal = tournamentTotalHalvesForPlayer(p.id);
+  const tourMax = tournamentMaxHalves();
+  subLine = `This game: ${fmtPlayed(playedThisGame)}/${max} • Tournament total: ${fmtPlayed(tourTotal)}/${tourMax}`;
+}
 
       const item = document.createElement("div");
       item.className = "pill";
       item.innerHTML = `
         <div>
           <div style="font-weight:950">${escapeHtml(p.name)}</div>
-          <div class="muted">Reg periods on court: ${fmtPlayed(played)}/${max}</div>
+          <div class="muted">${subLine}</div>
         </div>
         <div class="right"><div><b>${gameGoals}</b> goals</div></div>
       `;
